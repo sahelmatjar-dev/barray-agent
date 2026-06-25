@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BARRAY Truck Agent V3</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: Arial, sans-serif; background: #f1f5f9; height: 100vh; display: flex; flex-direction: column; }
+
+/* ===== HEADER ===== */
+.hdr {
+  background: #1a2744; padding: 12px 20px;
+  display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+}
+.logo {
+  width: 38px; height: 38px; background: #e8601a; border-radius: 9px;
+  display: flex; align-items: center; justify-content: center; font-size: 20px;
+}
+.hdr-info { flex: 1; }
+.hdr-info h1 { color: white; font-size: 15px; font-weight: 700; }
+.hdr-info p  { color: #94a3c0; font-size: 11px; margin-top: 2px; }
+.status { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #22c55e; }
+.status-dot { width: 7px; height: 7px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 6px #22c55e; }
+
+/* ===== INFO BAR ===== */
+.info-bar {
+  background: #243558; padding: 7px 20px;
+  display: flex; gap: 16px; flex-wrap: wrap; flex-shrink: 0;
+}
+.chip { font-size: 10px; color: #94a3c0; display: flex; align-items: center; gap: 4px; }
+.chip span { color: #e2e8f0; font-weight: 600; }
+
+/* ===== MESSAGES ===== */
+.msgs-wrap { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; background: #f8fafc; }
+.msg { display: flex; gap: 10px; align-items: flex-start; }
+.msg.user { flex-direction: row-reverse; }
+.av {
+  width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; flex-shrink: 0;
+}
+.av.ai   { background: #1a2744; }
+.av.user { background: #e8601a; }
+.bub {
+  max-width: 78%; padding: 10px 14px; border-radius: 13px;
+  font-size: 13px; line-height: 1.65;
+}
+.bub.ai {
+  background: white; border: 1px solid #e2e8f0; color: #1e293b;
+  border-radius: 3px 13px 13px 13px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+.bub.user {
+  background: #1a2744; color: #e2e8f0;
+  border-radius: 13px 3px 13px 13px;
+}
+.bub img { max-width: 220px; border-radius: 8px; margin-top: 8px; display: block; border: 1px solid #e2e8f0; }
+.typing { display: flex; gap: 4px; padding: 3px 0; }
+.dot { width: 6px; height: 6px; border-radius: 50%; background: #94a3b8; animation: bounce 1.2s infinite; }
+.dot:nth-child(2){animation-delay:.2s} .dot:nth-child(3){animation-delay:.4s}
+@keyframes bounce { 0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-6px)} }
+
+/* ===== QUICK BUTTONS ===== */
+.quick-row {
+  padding: 10px 20px; display: flex; gap: 7px; flex-wrap: wrap;
+  border-top: 1px solid #e2e8f0; background: white; flex-shrink: 0;
+}
+.qbtn {
+  padding: 4px 12px; border: 1px solid #e2e8f0; border-radius: 20px;
+  font-size: 11px; cursor: pointer; background: white; color: #475569;
+  font-family: Arial; transition: all 0.15s;
+}
+.qbtn:hover { border-color: #e8601a; color: #e8601a; background: #fff8f5; }
+
+/* ===== INPUT AREA ===== */
+.inp-area {
+  padding: 12px 20px; border-top: 1px solid #e2e8f0;
+  background: white; flex-shrink: 0;
+}
+.inp-row { display: flex; gap: 8px; align-items: flex-end; }
+.inp-row textarea {
+  flex: 1; padding: 9px 14px; border: 1.5px solid #e2e8f0;
+  border-radius: 10px; font-size: 13px; font-family: Arial;
+  resize: none; height: 42px; max-height: 110px; outline: none;
+  transition: border-color 0.2s; background: #f8fafc; color: #1e293b;
+}
+.inp-row textarea:focus { border-color: #e8601a; background: white; }
+.btn-img {
+  width: 42px; height: 42px; border: 1.5px solid #e2e8f0;
+  border-radius: 10px; background: #f8fafc; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; transition: all 0.15s; flex-shrink: 0;
+}
+.btn-img:hover { border-color: #e8601a; background: #fff8f5; }
+.btn-send {
+  width: 42px; height: 42px; background: #e8601a; border: none;
+  border-radius: 10px; cursor: pointer; display: flex;
+  align-items: center; justify-content: center; font-size: 18px;
+  color: white; flex-shrink: 0; transition: background 0.15s;
+}
+.btn-send:hover { background: #c94e12; }
+
+/* ===== IMAGE PREVIEW ===== */
+.img-preview {
+  display: none; align-items: center; gap: 10px;
+  margin-top: 8px; padding: 8px 12px;
+  background: #f8fafc; border: 1px solid #e2e8f0;
+  border-radius: 9px;
+}
+.img-preview img { width: 50px; height: 50px; object-fit: cover; border-radius: 7px; }
+.img-preview .img-info { flex: 1; }
+.img-preview .img-name { font-size: 11px; font-weight: 600; color: #334155; }
+.img-preview .img-size { font-size: 10px; color: #94a3b8; margin-top: 2px; }
+.btn-clear {
+  background: none; border: none; cursor: pointer;
+  font-size: 16px; color: #94a3b8; padding: 4px;
+  border-radius: 5px; transition: all 0.15s;
+}
+.btn-clear:hover { background: #fee2e2; color: #dc2626; }
+#file-input { display: none; }
+
+/* ===== HINT ===== */
+.inp-hint { font-size: 10px; color: #94a3b8; margin-top: 6px; text-align: center; }
+
+/* ===== SEVERITY TAGS ===== */
+.sev-h { display:inline;background:#fee2e2;color:#991b1b;padding:1px 6px;border-radius:4px;font-size:11px;font-weight:600; }
+.sev-m { display:inline;background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:4px;font-size:11px;font-weight:600; }
+.sev-l { display:inline;background:#d1fae5;color:#065f46;padding:1px 6px;border-radius:4px;font-size:11px;font-weight:600; }
+
+@media (max-width:600px) {
+  .info-bar { gap: 10px; }
+  .bub { max-width: 90%; font-size: 12px; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="logo">🔧</div>
+  <div class="hdr-info">
+    <h1>BARRAY Truck Agent — V3</h1>
+    <p>MAN TGS / TGX / TGA • SITRAK C7H • EL BARRAY RA SARL AU</p>
+  </div>
+  <div class="status"><div class="status-dot"></div>جاهز للتشخيص</div>
+</div>
+
+<!-- INFO BAR -->
+<div class="info-bar">
+  <div class="chip">⚙️ محركات: <span>D2066 / D2676</span></div>
+  <div class="chip">🛢️ زيت: <span>MAN M3677 — 5W-30</span></div>
+  <div class="chip">❄️ تبريد: <span>MAN 324 Si-OAT</span></div>
+  <div class="chip">⚡ كهرباء: <span>24V</span></div>
+  <div class="chip">🏗️ بيئة: <span>مقالع — Heavy Duty</span></div>
+  <div class="chip">🔄 صيانة: <span>كل 25,000-30,000 كم</span></div>
+</div>
+
+<!-- MESSAGES -->
+<div class="msgs-wrap" id="msgs">
+  <div class="msg">
+    <div class="av ai">🤖</div>
+    <div class="bub ai">
+      <strong>مرحباً — مهندس صيانة EL BARRAY جاهز.</strong><br><br>
+      لتشخيص دقيق أحتاج منك:<br>
+      <strong>1.</strong> نوع الشاحنة — MAN TGS / TGX / TGA / SITRAK C7H<br>
+      <strong>2.</strong> عدد الكيلومترات<br>
+      <strong>3.</strong> وصف العطل بالتفصيل<br>
+      <strong>4.</strong> كود الخطأ إن وجد<br><br>
+      📷 يمكنك <strong>رفع صورة لوحة الأخطاء</strong> مباشرة وسأحللها لك.
+    </div>
+  </div>
+</div>
+
+<!-- QUICK BUTTONS -->
+<div class="quick-row">
+  <button class="qbtn" onclick="sendQ('المحرك لا يشتغل')">محرك لا يشتغل</button>
+  <button class="qbtn" onclick="sendQ('دخان أسود وضعف في السحب')">دخان أسود</button>
+  <button class="qbtn" onclick="sendQ('ارتفاع درجة الحرارة')">ارتفاع الحرارة</button>
+  <button class="qbtn" onclick="sendQ('عطل AdBlue / SCR')">AdBlue / SCR</button>
+  <button class="qbtn" onclick="sendQ('ضعف القدرة بدون دخان')">ضعف القدرة</button>
+  <button class="qbtn" onclick="sendQ('تسريب هواء الفرامل')">تسريب هواء</button>
+  <button class="qbtn" onclick="sendQ('دخان أبيض عند التشغيل')">دخان أبيض</button>
+  <button class="qbtn" onclick="sendQ('البطارية لا تشحن')">بطارية</button>
+  <button class="qbtn" onclick="sendQ('ما هي مواعيد الصيانة الدورية لشاحنات المقالع؟')">صيانة دورية</button>
+</div>
+
+<!-- INPUT -->
+<div class="inp-area">
+  <div class="inp-row">
+    <textarea
+      id="inp"
+      placeholder="مثال: SITRAK C7H — 85,000 كم — دخان أسود عند التحميل..."
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg()}"
+    ></textarea>
+    <button class="btn-img" onclick="document.getElementById('file-input').click()" title="رفع صورة لوحة الأخطاء">📷</button>
+    <button class="btn-send" onclick="sendMsg()" title="إرسال">➤</button>
+  </div>
+
+  <div class="img-preview" id="img-preview">
+    <img id="preview-thumb" src="" alt=""/>
+    <div class="img-info">
+      <div class="img-name" id="preview-name">—</div>
+      <div class="img-size" id="preview-size">—</div>
+    </div>
+    <button class="btn-clear" onclick="clearImage()" title="حذف الصورة">✕</button>
+  </div>
+
+  <div class="inp-hint">Enter = إرسال &nbsp;|&nbsp; Shift+Enter = سطر جديد &nbsp;|&nbsp; 📷 = رفع صورة لوحة الأخطاء</div>
+  <input type="file" id="file-input" accept="image/*" onchange="handleImage(event)"/>
+</div>
+
+<script>
+// ===== KNOWLEDGE BASE =====
+const KB = `أنت مهندس صيانة شاحنات ثقيلة خبير بخبرة 30 سنة. تعمل في شركة EL BARRAY RA SARL AU المتخصصة في نقل الصخور والمقالع بالمغرب.
+
+=== هويتك ===
+خبير: MAN TGS / TGX / TGA (محركات D2066 و D2676)
+خبير: SITRAK C7H (تقنية MAN)
+خبير: Common Rail / EDC / SCR / AdBlue / Bosch
+خبير: كهرباء 24V / CAN BUS / أنظمة الفرامل الهوائية / هيدروليك PTO
+
+=== بيئة العمل ===
+مقالع — نقل الصخور — أحمال ثقيلة — غبار كثيف — حرارة الصحراء
+تصنيف: HEAVY DUTY SEVERE SERVICE
+→ تقصير جميع فترات الصيانة عن توصيات المصنع
+
+=== مواصفات الزيوت والسوائل المعتمدة ===
+زيت المحرك    : MAN M3677 — 5W-30 (أو M3277 / M3477 / M3575 / M3677 حسب المحرك)
+زيت القير      : MAN 342 M3
+زيت الديفرانسيل: MAN 342 M3
+الهيدروليك     : ISO VG 46 أو ISO VG 68 حسب الحرارة
+سائل التبريد   : MAN 324 Si-OAT — نسبة 50/50 مع ماء مقطر فقط
+AdBlue         : ISO 22241 معتمد فقط — لا يقبل بديل
+تشحيم          : تشحيم دوري للكردان والصلبات والبالونات ونقاط التشحيم
+
+=== تحذيرات سائل التبريد ===
+ممنوع: ماء الصنبور / خلط أنواع مختلفة / تشغيل بدون سائل
+
+=== مواعيد صيانة BARRAY (مخصصة للمقالع) ===
+أول صيانة   : 4000-5000 كم — إلزامية (زيت + فحص شامل + شد البراغي)
+زيت المحرك  : كل 25,000-30,000 كم (أيهما أولاً)
+فلتر الوقود  : كل 20,000-30,000 كم أو عند وجود ماء أو ضعف
+فلتر الهواء  : فحص أسبوعي + تنظيف دوري (بسبب الغبار الكثيف)
+فلتر الزيت  : مع كل تغيير زيت — لا يُعاد استعماله
+
+يومي  : زيت — ماء — هواء — إطارات — تسريبات — إنارة
+أسبوعي: بطاريات — شد البراغي — الكردان — فحص التسريبات
+شهري  : فرامل — ديفرانسيل — قير — ABS sensors — نظام هوائي
+
+=== أولويات السلامة (بهذا الترتيب) ===
+1. السلامة
+2. الفرامل
+3. التوجيه
+4. التعليق
+5. المحرك
+6. الكهرباء
+7. الراحة
+
+=== منهج التشخيص الإلزامي ===
+عند كل عطل استخدم هذا الهيكل حرفياً:
+
+🚛 نوع الشاحنة: [ما ذكره المستخدم]
+📍 الكيلومترات: [ما ذكره]
+⚠️ درجة الخطورة: [عالية 🔴 / متوسطة 🟡 / منخفضة 🟢]
+
+📋 الأسباب المحتملة (مرتبة من الأكثر احتمالاً):
+1. [السبب الأول — وسببه]
+2. [السبب الثاني]
+3. [السبب الثالث]
+
+🔍 خطوات الفحص (بالترتيب):
+1. [خطوة 1]
+2. [خطوة 2]
+3. [خطوة 3]
+4. [خطوة 4 إن لزم]
+
+✅ التشخيص المرجح: [وصف واضح]
+🛠️ الإصلاح المقترح: [ابدأ بالأرخص أولاً]
+⏱️ مدة الإصلاح: [تقدير زمني]
+💰 التكلفة التقريبية: [تقدير بالدرهم المغربي]
+🚦 هل يمكن مواصلة السير: نعم / لا — [السبب]
+
+=== قواعد التشخيص الصارمة ===
+1. قبل تغيير أي قطعة: تحقق من الكهرباء ← الأرضي ← الحساس ← التغذية ← الضغط ← ثم القطعة
+2. في بيئة المقالع: زد احتمال الفلاتر والحساسات والأسلاك والخراطيم +40%
+3. ضعف الأرضي مسؤول عن 30%+ من أعطال SITRAK — افحصه دائماً أولاً
+4. أوقف الشاحنة فوراً عند: ضغط زيت منخفض / حرارة حرجة / ضغط فرامل حرج
+5. إذا رأيت صورة: حللها واستخرج أكواد الأخطاء ووصف المشكلة بدقة
+
+=== أنظمة الانبعاثات ===
+Euro 2/3 : بدون SCR — بدون AdBlue
+Euro 4/5 : SCR + AdBlue إلزامي — D2066 حتى Euro 5
+Euro 6   : SCR + AdBlue + EGR — D2676
+
+=== الأعطال الشائعة SITRAK في المقالع ===
+- ضعف الأرضي → أعطال كهربائية متعددة وغير مترابطة
+- حساسات ABS → رسائل متكررة على لوحة العدادات
+- AdBlue / NOx → تقليص القدرة التلقائي (Derate)
+- تسربات هواء → ضعف فرامل وبطء في الضغط
+- فلتر هواء مسدود → دخان أسود وضعف واضح
+
+=== الأعطال الشائعة MAN D2066 / D2676 ===
+- Common Rail: ضغط وقود منخفض / بخاخات / مضخة ضغط عالي / Rail Pressure Sensor
+- Turbo: فقدان قوة / دخان أسود / صفير / فحص الخراطيم والـ Intercooler والـ Wastegate أو VGT
+- EGR: دخان أسود مع بلوغ حرارة عالية
+- SCR: حساس NOx / Catalyst / Pump / Injector
+
+=== عند تحليل الصور ===
+إذا أرسل المستخدم صورة:
+1. اذكر ما تراه بدقة
+2. استخرج جميع أكواد الأخطاء المرئية
+3. فسّر كل كود
+4. أعط التشخيص المبني على الصورة`;
+
+// ===== STATE =====
+let history = [];
+let pendingImage = null;
+let pendingImageName = '';
+let pendingImageSize = '';
+
+// ===== IMAGE HANDLING =====
+function handleImage(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    pendingImage = ev.target.result;
+    pendingImageName = file.name;
+    pendingImageSize = (file.size / 1024).toFixed(0) + ' KB';
+    document.getElementById('preview-thumb').src = pendingImage;
+    document.getElementById('preview-name').textContent = file.name;
+    document.getElementById('preview-size').textContent = pendingImageSize;
+    document.getElementById('img-preview').style.display = 'flex';
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+}
+
+function clearImage() {
+  pendingImage = null;
+  pendingImageName = '';
+  document.getElementById('img-preview').style.display = 'none';
+  document.getElementById('preview-thumb').src = '';
+}
+
+// ===== MESSAGES =====
+function addMsg(role, text, imgSrc) {
+  const msgs = document.getElementById('msgs');
+  const div = document.createElement('div');
+  div.className = 'msg' + (role === 'user' ? ' user' : '');
+  const ico = role === 'user' ? '👤' : '🤖';
+  let html = `<div class="av ${role}">${ico}</div><div class="bub ${role}">`;
+  if (imgSrc) html += `<img src="${imgSrc}" alt="صورة العطل"/>`;
+  if (text) html += text.replace(/\n/g, '<br>');
+  html += '</div>';
+  div.innerHTML = html;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function addTyping() {
+  const msgs = document.getElementById('msgs');
+  const div = document.createElement('div');
+  div.className = 'msg'; div.id = 'typing';
+  div.innerHTML = `<div class="av ai">🤖</div><div class="bub ai"><div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+// ===== SEND MESSAGE =====
+async function sendMsg() {
+  const inp = document.getElementById('inp');
+  const text = inp.value.trim();
+  if (!text && !pendingImage) return;
+
+  inp.value = '';
+  inp.style.height = '42px';
+
+  // عرض رسالة المستخدم
+  const displayText = text || '';
+  addMsg('user', displayText, pendingImage);
+
+  // بناء محتوى الرسالة للـ API
+  let content;
+  if (pendingImage) {
+    const base64 = pendingImage.split(',')[1];
+    const mediaType = pendingImage.match(/data:(image\/\w+);/)?.[1] || 'image/jpeg';
+    content = [];
+    if (text) content.push({ type: 'text', text: text });
+    content.push({ type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } });
+    if (!text) content.push({ type: 'text', text: 'حلل هذه الصورة واستخرج جميع أكواد الأخطاء والمشاكل الظاهرة وأعط التشخيص.' });
+  } else {
+    content = text;
+  }
+
+  history.push({ role: 'user', content: content });
+  clearImage();
+  addTyping();
+
+  try {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1500,
+        system: KB,
+        messages: history
+      })
+    });
+
+    const data = await res.json();
+
+    if (data.error) {
+      throw new Error(data.error.message || 'خطأ من الـ API');
+    }
+
+    const reply = data.content?.[0]?.text || 'لم تصل استجابة.';
+    document.getElementById('typing')?.remove();
+    addMsg('ai', reply);
+    history.push({ role: 'assistant', content: reply });
+
+  } catch(e) {
+    document.getElementById('typing')?.remove();
+    addMsg('ai', '❌ خطأ: ' + e.message + '\n\nتأكد أن السيرفر يعمل (node server.js) وأن المفتاح صحيح.');
+  }
+}
+
+async function sendQ(t) {
+  document.getElementById('inp').value = t;
+  await sendMsg();
+}
+
+// ===== AUTO RESIZE TEXTAREA =====
+document.getElementById('inp').addEventListener('input', function() {
+  this.style.height = '42px';
+  this.style.height = Math.min(this.scrollHeight, 110) + 'px';
+});
+</script>
+</body>
+</html>
