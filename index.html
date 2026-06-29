@@ -2,441 +2,671 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BARRAY Truck Agent V3</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0f1c35">
+<title>BARRAY Fleet Manager</title>
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: Arial, sans-serif; background: #f1f5f9; height: 100vh; display: flex; flex-direction: column; }
+:root{--nv:#0f1c35;--nv2:#1a2d4e;--nv3:#243d63;--or:#e8601a;--or2:#c94e12;--bg:#f0f2f5;--card:#fff;--bd:#e4e8ef;--tx:#0f1c35;--tx2:#526070;--tx3:#8fa0b0;--rd:#dc2626;--gn:#15803d;--yw:#b45309;--r:10px}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,Arial,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh}
 
-/* ===== HEADER ===== */
-.hdr {
-  background: #1a2744; padding: 12px 20px;
-  display: flex; align-items: center; gap: 12px; flex-shrink: 0;
-}
-.logo {
-  width: 38px; height: 38px; background: #e8601a; border-radius: 9px;
-  display: flex; align-items: center; justify-content: center; font-size: 20px;
-}
-.hdr-info { flex: 1; }
-.hdr-info h1 { color: white; font-size: 15px; font-weight: 700; }
-.hdr-info p  { color: #94a3c0; font-size: 11px; margin-top: 2px; }
-.status { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #22c55e; }
-.status-dot { width: 7px; height: 7px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 6px #22c55e; }
+/* ── TOPBAR ── */
+.topbar{background:var(--nv);padding:0 20px;height:56px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:200;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.t-logo{width:34px;height:34px;background:var(--or);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.t-info h1{color:#fff;font-size:15px;font-weight:700}
+.t-info p{color:#7a9abf;font-size:10px}
+.t-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px #22c55e;margin-right:auto}
 
-/* ===== INFO BAR ===== */
-.info-bar {
-  background: #243558; padding: 7px 20px;
-  display: flex; gap: 16px; flex-wrap: wrap; flex-shrink: 0;
-}
-.chip { font-size: 10px; color: #94a3c0; display: flex; align-items: center; gap: 4px; }
-.chip span { color: #e2e8f0; font-weight: 600; }
+/* ── DESKTOP NAV (top) ── */
+.desk-nav{background:var(--nv2);display:flex;gap:4px;padding:0 20px;border-bottom:1px solid rgba(255,255,255,.08)}
+.dn-btn{padding:12px 18px;border:none;background:transparent;color:#7a9abf;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;border-bottom:3px solid transparent;transition:all .15s;display:flex;align-items:center;gap:7px;white-space:nowrap}
+.dn-btn:hover{color:#fff}
+.dn-btn.active{color:#fff;border-bottom-color:var(--or)}
+.dn-btn .bdot{width:7px;height:7px;border-radius:50%;background:var(--rd);flex-shrink:0;display:none}
 
-/* ===== MESSAGES ===== */
-.msgs-wrap { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; background: #f8fafc; }
-.msg { display: flex; gap: 10px; align-items: flex-start; }
-.msg.user { flex-direction: row-reverse; }
-.av {
-  width: 32px; height: 32px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 15px; flex-shrink: 0;
-}
-.av.ai   { background: #1a2744; }
-.av.user { background: #e8601a; }
-.bub {
-  max-width: 78%; padding: 10px 14px; border-radius: 13px;
-  font-size: 13px; line-height: 1.65;
-}
-.bub.ai {
-  background: white; border: 1px solid #e2e8f0; color: #1e293b;
-  border-radius: 3px 13px 13px 13px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-}
-.bub.user {
-  background: #1a2744; color: #e2e8f0;
-  border-radius: 13px 3px 13px 13px;
-}
-.bub img { max-width: 220px; border-radius: 8px; margin-top: 8px; display: block; border: 1px solid #e2e8f0; }
-.typing { display: flex; gap: 4px; padding: 3px 0; }
-.dot { width: 6px; height: 6px; border-radius: 50%; background: #94a3b8; animation: bounce 1.2s infinite; }
-.dot:nth-child(2){animation-delay:.2s} .dot:nth-child(3){animation-delay:.4s}
-@keyframes bounce { 0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-6px)} }
+/* ── MOBILE NAV (bottom) ── */
+.mob-nav{display:none;background:var(--nv);border-top:1px solid rgba(255,255,255,.08);padding-bottom:env(safe-area-inset-bottom)}
+.nb{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 4px 7px;border:none;background:transparent;color:#5a7a9a;font-size:9px;cursor:pointer;font-family:inherit;position:relative;transition:color .15s}
+.nb .ni{font-size:20px;line-height:1}
+.nb.active{color:var(--or)}
+.nb.active::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:20px;height:2px;background:var(--or);border-radius:2px 2px 0 0}
+.nb .ndot{position:absolute;top:6px;right:calc(50% - 14px);width:7px;height:7px;border-radius:50%;background:var(--rd);border:1.5px solid var(--nv);display:none}
 
-/* ===== QUICK BUTTONS ===== */
-.quick-row {
-  padding: 10px 20px; display: flex; gap: 7px; flex-wrap: wrap;
-  border-top: 1px solid #e2e8f0; background: white; flex-shrink: 0;
-}
-.qbtn {
-  padding: 4px 12px; border: 1px solid #e2e8f0; border-radius: 20px;
-  font-size: 11px; cursor: pointer; background: white; color: #475569;
-  font-family: Arial; transition: all 0.15s;
-}
-.qbtn:hover { border-color: #e8601a; color: #e8601a; background: #fff8f5; }
+/* ── LAYOUT ── */
+.layout{display:flex;min-height:calc(100vh - 56px)}
 
-/* ===== INPUT AREA ===== */
-.inp-area {
-  padding: 12px 20px; border-top: 1px solid #e2e8f0;
-  background: white; flex-shrink: 0;
-}
-.inp-row { display: flex; gap: 8px; align-items: flex-end; }
-.inp-row textarea {
-  flex: 1; padding: 9px 14px; border: 1.5px solid #e2e8f0;
-  border-radius: 10px; font-size: 13px; font-family: Arial;
-  resize: none; height: 42px; max-height: 110px; outline: none;
-  transition: border-color 0.2s; background: #f8fafc; color: #1e293b;
-}
-.inp-row textarea:focus { border-color: #e8601a; background: white; }
-.btn-img {
-  width: 42px; height: 42px; border: 1.5px solid #e2e8f0;
-  border-radius: 10px; background: #f8fafc; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 18px; transition: all 0.15s; flex-shrink: 0;
-}
-.btn-img:hover { border-color: #e8601a; background: #fff8f5; }
-.btn-send {
-  width: 42px; height: 42px; background: #e8601a; border: none;
-  border-radius: 10px; cursor: pointer; display: flex;
-  align-items: center; justify-content: center; font-size: 18px;
-  color: white; flex-shrink: 0; transition: background 0.15s;
-}
-.btn-send:hover { background: #c94e12; }
+/* DESKTOP SIDEBAR */
+.sidebar{width:240px;flex-shrink:0;background:var(--card);border-left:1px solid var(--bd);padding:16px 12px;display:none;position:sticky;top:56px;height:calc(100vh - 56px);overflow-y:auto}
+.sb-section{font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.8px;margin:16px 0 8px;padding:0 6px}
+.sb-section:first-child{margin-top:0}
+.sb-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:7px;cursor:pointer;font-size:12px;color:var(--tx2);transition:all .12s;margin-bottom:2px}
+.sb-item:hover{background:var(--bg);color:var(--tx)}
+.sb-item.active{background:#fff3ee;color:var(--or);font-weight:600}
+.sb-item .ico{font-size:16px;width:20px;text-align:center}
+.sb-stat{background:var(--bg);border-radius:8px;padding:10px 12px;margin-bottom:8px}
+.sb-stat .sl{font-size:10px;color:var(--tx2);margin-bottom:3px}
+.sb-stat .sv{font-size:20px;font-weight:700;color:var(--nv)}
 
-/* ===== IMAGE PREVIEW ===== */
-.img-preview {
-  display: none; align-items: center; gap: 10px;
-  margin-top: 8px; padding: 8px 12px;
-  background: #f8fafc; border: 1px solid #e2e8f0;
-  border-radius: 9px;
-}
-.img-preview img { width: 50px; height: 50px; object-fit: cover; border-radius: 7px; }
-.img-preview .img-info { flex: 1; }
-.img-preview .img-name { font-size: 11px; font-weight: 600; color: #334155; }
-.img-preview .img-size { font-size: 10px; color: #94a3b8; margin-top: 2px; }
-.btn-clear {
-  background: none; border: none; cursor: pointer;
-  font-size: 16px; color: #94a3b8; padding: 4px;
-  border-radius: 5px; transition: all 0.15s;
-}
-.btn-clear:hover { background: #fee2e2; color: #dc2626; }
-#file-input { display: none; }
+/* MAIN CONTENT */
+.main{flex:1;min-width:0;padding:20px}
 
-/* ===== HINT ===== */
-.inp-hint { font-size: 10px; color: #94a3b8; margin-top: 6px; text-align: center; }
+/* PAGES */
+.page{display:none}
+.page.active{display:block}
 
-/* ===== SEVERITY TAGS ===== */
-.sev-h { display:inline;background:#fee2e2;color:#991b1b;padding:1px 6px;border-radius:4px;font-size:11px;font-weight:600; }
-.sev-m { display:inline;background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:4px;font-size:11px;font-weight:600; }
-.sev-l { display:inline;background:#d1fae5;color:#065f46;padding:1px 6px;border-radius:4px;font-size:11px;font-weight:600; }
+/* ── COMPONENTS ── */
+.sec{font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.8px;margin:18px 0 10px;display:flex;align-items:center;justify-content:space-between}
+.sec:first-child{margin-top:0}
+.sec span{font-size:11px;font-weight:400;color:var(--tx3);text-transform:none;letter-spacing:0}
 
-@media (max-width:600px) {
-  .info-bar { gap: 10px; }
-  .bub { max-width: 90%; font-size: 12px; }
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+.metric{background:var(--card);border-radius:var(--r);padding:14px 16px;border:1px solid var(--bd)}
+.metric .lbl{font-size:11px;color:var(--tx2);margin-bottom:5px;font-weight:500}
+.metric .val{font-size:26px;font-weight:700;color:var(--nv);line-height:1}
+.metric .sub{font-size:10px;color:var(--tx3);margin-top:3px}
+
+.fleet-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:8px;margin-bottom:20px}
+.fc{background:var(--card);border:1.5px solid var(--bd);border-radius:var(--r);padding:10px 12px;cursor:pointer;transition:all .15s}
+.fc:hover{border-color:var(--or);box-shadow:0 2px 8px rgba(232,96,26,.12)}
+.fc.sel{border-color:var(--or);border-width:2px;background:#fff8f5}
+.fc-plate{font-size:13px;font-weight:700;color:var(--nv)}
+.fc-model{font-size:10px;color:var(--tx2);margin-top:2px}
+.fc-tag{display:inline-flex;align-items:center;padding:2px 7px;border-radius:20px;font-size:9px;font-weight:700;margin-top:6px}
+.tok{background:#dcfce7;color:#166534}
+.twn{background:#fef9c3;color:#854d0e}
+.terr{background:#fee2e2;color:#991b1b}
+
+.chat-card{background:var(--card);border-radius:var(--r);border:1px solid var(--bd);overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.ch-top{background:var(--nv2);padding:11px 15px;display:flex;align-items:center;gap:9px}
+.ch-top .ct{color:#fff;font-size:13px;font-weight:600;flex:1}
+.ch-top .cs{font-size:10px;color:#7a9abf;background:rgba(255,255,255,.1);padding:3px 10px;border-radius:20px}
+.msgs{height:340px;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;background:#f7f9fc}
+.msg{display:flex;gap:8px;align-items:flex-start}
+.msg.u{flex-direction:row-reverse}
+.av{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px}
+.av.ai{background:var(--nv2)}.av.u{background:var(--or)}
+.bub{max-width:80%;padding:9px 13px;font-size:13px;line-height:1.6}
+.bub.ai{background:#fff;border:1px solid var(--bd);color:var(--tx);border-radius:2px 11px 11px 11px}
+.bub.u{background:var(--nv2);color:#e8f0fa;border-radius:11px 2px 11px 11px}
+.bub img{max-width:240px;border-radius:7px;margin-top:7px;display:block;border:1px solid var(--bd)}
+.tyd{display:flex;gap:3px;padding:2px 0}
+.dot{width:5px;height:5px;border-radius:50%;background:var(--tx3);animation:bd 1.2s infinite}
+.dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+@keyframes bd{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-5px)}}
+.qrow{padding:9px 14px;display:flex;gap:6px;overflow-x:auto;border-top:1px solid var(--bd);scrollbar-width:none}
+.qrow::-webkit-scrollbar{display:none}
+.qbtn{padding:5px 12px;border:1px solid var(--bd);border-radius:20px;font-size:11px;cursor:pointer;background:#fff;color:var(--tx2);font-family:inherit;white-space:nowrap;flex-shrink:0;transition:all .12s}
+.qbtn:hover{border-color:var(--or);color:var(--or);background:#fff8f5}
+.inp-wrap{padding:11px 14px;border-top:1px solid var(--bd);background:#fff}
+.inp-row{display:flex;gap:8px;align-items:flex-end}
+.inp-row textarea{flex:1;padding:9px 13px;border:1.5px solid var(--bd);border-radius:9px;font-size:13px;font-family:inherit;resize:none;height:40px;max-height:100px;outline:none;background:#f7f9fc;color:var(--tx);transition:border-color .15s}
+.inp-row textarea:focus{border-color:var(--or);background:#fff}
+.ibtn{width:40px;height:40px;border-radius:9px;border:1.5px solid var(--bd);background:#f7f9fc;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;color:var(--tx2);transition:all .12s}
+.ibtn:hover{border-color:var(--or);color:var(--or)}
+.sbtn{width:40px;height:40px;background:var(--or);border:none;border-radius:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:19px;color:#fff;flex-shrink:0;transition:background .12s}
+.sbtn:hover{background:var(--or2)}
+.prevbar{display:none;align-items:center;gap:9px;margin-top:8px;padding:7px 10px;background:#f7f9fc;border:1px solid var(--bd);border-radius:8px}
+.prevbar img{width:42px;height:42px;object-fit:cover;border-radius:5px}
+.prevbar .pi{flex:1;min-width:0}
+.prevbar .pn{font-size:11px;font-weight:600;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prevbar .ps{font-size:10px;color:var(--tx3)}
+.prevbar button{background:none;border:none;cursor:pointer;font-size:16px;color:var(--tx3)}
+#fi{display:none}
+
+.card{background:var(--card);border-radius:var(--r);border:1px solid var(--bd);padding:16px;margin-bottom:12px}
+.frow{display:flex;gap:8px;margin-bottom:8px}
+.frow select,.frow input{flex:1;min-width:0;padding:9px 11px;border:1.5px solid var(--bd);border-radius:8px;font-size:13px;font-family:inherit;background:#f7f9fc;color:var(--tx);outline:none;transition:border-color .15s}
+.frow select:focus,.frow input:focus{border-color:var(--or)}
+.btn-save{width:100%;padding:11px;background:var(--or);color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .12s}
+.btn-save:hover{background:var(--or2)}
+
+.mlist{display:flex;flex-direction:column;gap:9px}
+.mi{background:var(--card);border-radius:var(--r);border:1px solid var(--bd);padding:12px 14px;border-right:3px solid var(--or)}
+.mi-top{display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap}
+.mi-plate{font-size:13px;font-weight:700;color:var(--nv)}
+.mi-type{font-size:12px;color:var(--tx2);flex:1}
+.mi-date{font-size:11px;color:var(--tx3)}
+.mi-del{background:none;border:none;cursor:pointer;color:var(--tx3);font-size:16px;padding:2px}
+.mi-del:hover{color:var(--rd)}
+.mi-note{font-size:12px;color:var(--tx2);margin-bottom:3px}
+.mi-km{font-size:11px;color:var(--or);font-weight:600}
+
+.alrt{border-radius:var(--r);padding:12px 14px;display:flex;gap:10px;align-items:flex-start;margin-bottom:9px}
+.alrt.h{background:#fef2f2;border:1px solid #fca5a5}
+.alrt.m{background:#fffbeb;border:1px solid #fcd34d}
+.alrt .ah{font-size:13px;font-weight:700;color:var(--tx);margin-bottom:2px}
+.alrt .ab{font-size:12px;color:var(--tx2)}
+
+.sbar{position:relative;margin-bottom:14px}
+.sbar input{width:100%;padding:10px 38px 10px 14px;border:1.5px solid var(--bd);border-radius:9px;font-size:13px;font-family:inherit;background:#fff;color:var(--tx);outline:none;transition:border-color .15s}
+.sbar input:focus{border-color:var(--or)}
+.sbar .sico{position:absolute;right:11px;top:50%;transform:translateY(-50%);font-size:18px;color:var(--tx3)}
+
+.clist{display:flex;flex-direction:column;gap:8px}
+.ci{background:var(--card);border-radius:var(--r);border:1px solid var(--bd);padding:13px 14px;transition:box-shadow .12s}
+.ci:hover{box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.ci-top{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.ci-code{font-size:14px;font-weight:700;color:var(--nv);font-family:monospace;letter-spacing:.5px}
+.ci-sys{font-size:9px;padding:2px 8px;border-radius:20px;font-weight:700}
+.sm{background:#dbeafe;color:#1e40af}.ss{background:#ede9fe;color:#5b21b6}.sc2{background:#dcfce7;color:#166534}
+.ci-desc{font-size:13px;color:var(--tx);margin-bottom:4px;font-weight:500}
+.ci-cause{font-size:12px;color:var(--tx2);margin-bottom:3px}
+.ci-act{font-size:12px;color:var(--or);font-weight:600}
+
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.pc{background:var(--card);border-radius:var(--r);border:1px solid var(--bd);padding:13px 14px;transition:box-shadow .12s}
+.pc:hover{box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.pc-name{font-size:13px;font-weight:600;color:var(--tx);margin-bottom:6px;line-height:1.4}
+.pc-price{font-size:17px;font-weight:700;color:var(--or)}
+.pc-unit{font-size:11px;color:var(--tx3);font-weight:400}
+.pc-compat{font-size:11px;color:var(--tx2);margin-top:4px}
+.pc-brand{font-size:11px;color:var(--tx3);margin-top:3px}
+
+.fltrow{display:flex;gap:8px;margin-bottom:14px}
+.fltrow select{flex:1;padding:9px 12px;border:1.5px solid var(--bd);border-radius:8px;font-size:13px;font-family:inherit;background:#fff;color:var(--tx);outline:none}
+
+.empty{text-align:center;padding:40px 20px;color:var(--tx3)}
+.empty .eico{font-size:40px;margin-bottom:10px}
+.empty p{font-size:13px}
+
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--nv);color:#fff;padding:9px 20px;border-radius:22px;font-size:13px;font-weight:500;opacity:0;transition:all .25s;pointer-events:none;white-space:nowrap;z-index:999;box-shadow:0 4px 12px rgba(0,0,0,.2)}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── RESPONSIVE ── */
+@media(min-width:900px){
+  .mob-nav{display:none!important}
+  .desk-nav{display:flex}
+  .sidebar{display:block}
+  .layout{min-height:calc(100vh - 96px)}
+  .main{padding:24px 28px}
+  .msgs{height:380px}
 }
+@media(max-width:899px){
+  .desk-nav{display:none}
+  .sidebar{display:none!important}
+  .mob-nav{display:flex;position:fixed;bottom:0;left:0;right:0;z-index:200}
+  .layout{min-height:auto}
+  .main{padding:13px 13px 76px}
+  .metrics{grid-template-columns:repeat(2,1fr);gap:9px;margin-bottom:14px}
+  .metric .val{font-size:22px}
+  .fleet-grid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:7px}
+  .msgs{height:230px}
+  .bub{font-size:12px}
+  .pgrid{grid-template-columns:repeat(2,1fr);gap:8px}
+  #toast{bottom:80px}
+}
+@media(max-width:480px){
+  .topbar{padding:0 14px}
+  .t-info h1{font-size:13px}
+  .fleet-grid{grid-template-columns:repeat(2,1fr)}
+}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:var(--bd);border-radius:4px}
 </style>
 </head>
 <body>
 
-<!-- HEADER -->
-<div class="hdr">
-  <div class="logo">🔧</div>
-  <div class="hdr-info">
-    <h1>BARRAY Truck Agent — V3</h1>
-    <p>MAN TGS / TGX / TGA • SITRAK C7H • EL BARRAY RA SARL AU</p>
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="t-logo">🔧</div>
+  <div class="t-info">
+    <h1>BARRAY Fleet Manager V4</h1>
+    <p>EL BARRAY RA SARL AU &middot; نظام إدارة الأسطول</p>
   </div>
-  <div class="status"><div class="status-dot"></div>جاهز للتشخيص</div>
+  <div class="t-dot"></div>
 </div>
 
-<!-- INFO BAR -->
-<div class="info-bar">
-  <div class="chip">⚙️ محركات: <span>D2066 / D2676</span></div>
-  <div class="chip">🛢️ زيت: <span>MAN M3677 — 5W-30</span></div>
-  <div class="chip">❄️ تبريد: <span>MAN 324 Si-OAT</span></div>
-  <div class="chip">⚡ كهرباء: <span>24V</span></div>
-  <div class="chip">🏗️ بيئة: <span>مقالع — Heavy Duty</span></div>
-  <div class="chip">🔄 صيانة: <span>كل 25,000-30,000 كم</span></div>
+<!-- DESKTOP NAV -->
+<div class="desk-nav">
+  <button class="dn-btn active" onclick="showPage('diag',this)">🔧 تشخيص الأعطال <div class="bdot" id="dd"></div></button>
+  <button class="dn-btn" onclick="showPage('maint',this)">📋 سجل الصيانة <div class="bdot" id="dm"></div></button>
+  <button class="dn-btn" onclick="showPage('codes',this)">📟 أكواد الأخطاء</button>
+  <button class="dn-btn" onclick="showPage('parts',this)">🔩 قطع الغيار</button>
 </div>
 
-<!-- MESSAGES -->
-<div class="msgs-wrap" id="msgs">
-  <div class="msg">
-    <div class="av ai">🤖</div>
-    <div class="bub ai">
-      <strong>مرحباً — مهندس صيانة EL BARRAY جاهز.</strong><br><br>
-      لتشخيص دقيق أحتاج منك:<br>
-      <strong>1.</strong> نوع الشاحنة — MAN TGS / TGX / TGA / SITRAK C7H<br>
-      <strong>2.</strong> عدد الكيلومترات<br>
-      <strong>3.</strong> وصف العطل بالتفصيل<br>
-      <strong>4.</strong> كود الخطأ إن وجد<br><br>
-      📷 يمكنك <strong>رفع صورة لوحة الأخطاء</strong> مباشرة وسأحللها لك.
+<div class="layout">
+
+<!-- SIDEBAR (desktop only) -->
+<div class="sidebar">
+  <div class="sb-section">ملخص الأسطول</div>
+  <div class="sb-stat"><div class="sl">إجمالي الشاحنات</div><div class="sv">17</div></div>
+  <div class="sb-stat"><div class="sl">تقارير الأعطال</div><div class="sv" id="sb-rep">0</div></div>
+  <div class="sb-stat"><div class="sl">أعطال عالية</div><div class="sv" id="sb-hi" style="color:var(--rd)">0</div></div>
+  <div class="sb-stat"><div class="sl">تنبيهات صيانة</div><div class="sv" id="sb-alr" style="color:var(--yw)">0</div></div>
+  <div class="sb-section">مواصفات معتمدة</div>
+  <div class="sb-item"><span class="ico">🛢️</span>MAN M3677 — 5W-30</div>
+  <div class="sb-item"><span class="ico">❄️</span>MAN 324 Si-OAT</div>
+  <div class="sb-item"><span class="ico">⚙️</span>MAN 342 M3</div>
+  <div class="sb-item"><span class="ico">💧</span>AdBlue ISO 22241</div>
+  <div class="sb-section">مواعيد BARRAY</div>
+  <div class="sb-item"><span class="ico">🔄</span>زيت: 25-30 ألف كم</div>
+  <div class="sb-item"><span class="ico">⛽</span>وقود: 20-30 ألف كم</div>
+  <div class="sb-item"><span class="ico">💨</span>هواء: فحص أسبوعي</div>
+  <div class="sb-item"><span class="ico">🏁</span>أول صيانة: 4-5 آلاف كم</div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+<!-- PAGE: DIAG -->
+<div class="page active" id="pg-diag">
+  <div class="metrics">
+    <div class="metric"><div class="lbl">الشاحنات</div><div class="val">17</div><div class="sub">أسطول EL BARRAY</div></div>
+    <div class="metric"><div class="lbl">تقارير الأعطال</div><div class="val" id="m-rep">0</div><div class="sub">محفوظة</div></div>
+    <div class="metric"><div class="lbl">خطورة عالية</div><div class="val" id="m-hi" style="color:var(--rd)">0</div><div class="sub">تحتاج تدخلاً</div></div>
+    <div class="metric"><div class="lbl">تنبيهات</div><div class="val" id="m-alr" style="color:var(--yw)">0</div><div class="sub">صيانة قادمة</div></div>
+  </div>
+  <div class="sec">اختر شاحنة <span>اضغط على اللوحة للتشخيص</span></div>
+  <div class="fleet-grid" id="fgrid"></div>
+  <div class="chat-card">
+    <div class="ch-top">
+      <span style="font-size:18px">🤖</span>
+      <span class="ct">مهندس التشخيص &middot; خبرة 30 سنة</span>
+      <span class="cs" id="sel-lbl">لم تختر شاحنة</span>
+    </div>
+    <div class="msgs" id="msgs">
+      <div class="msg"><div class="av ai">🤖</div>
+      <div class="bub ai"><strong>مرحباً</strong> — اختر شاحنة من الأعلى ثم صف العطل أو ارفع صورة لوحة الأخطاء 📷</div></div>
+    </div>
+    <div class="qrow">
+      <button class="qbtn" onclick="sendQ('المحرك لا يشتغل')">محرك لا يشتغل</button>
+      <button class="qbtn" onclick="sendQ('دخان أسود وضعف السحب')">دخان أسود</button>
+      <button class="qbtn" onclick="sendQ('ارتفاع درجة الحرارة')">ارتفاع الحرارة</button>
+      <button class="qbtn" onclick="sendQ('عطل AdBlue أو SCR')">AdBlue / SCR</button>
+      <button class="qbtn" onclick="sendQ('ضعف القدرة بدون دخان')">ضعف القدرة</button>
+      <button class="qbtn" onclick="sendQ('تسريب هواء الفرامل')">تسريب هواء</button>
+      <button class="qbtn" onclick="sendQ('دخان أبيض عند التشغيل')">دخان أبيض</button>
+      <button class="qbtn" onclick="sendQ('البطارية لا تشحن')">بطارية</button>
+      <button class="qbtn" onclick="sendQ('جدول الصيانة الدورية للمقالع')">صيانة دورية</button>
+    </div>
+    <div class="inp-wrap">
+      <div class="inp-row">
+        <textarea id="inp" placeholder="نوع الشاحنة · الكيلومترات · وصف العطل..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg()}"></textarea>
+        <button class="ibtn" onclick="document.getElementById('fi').click()" title="رفع صورة">📷</button>
+        <button class="sbtn" onclick="sendMsg()" title="إرسال">➤</button>
+      </div>
+      <div class="prevbar" id="prevbar">
+        <img id="pimg" src="" alt=""/>
+        <div class="pi"><div class="pn" id="pname">—</div><div class="ps" id="psize">—</div></div>
+        <button onclick="clearImg()">✕</button>
+      </div>
+      <input type="file" id="fi" accept="image/*" onchange="handleImg(event)"/>
     </div>
   </div>
 </div>
 
-<!-- QUICK BUTTONS -->
-<div class="quick-row">
-  <button class="qbtn" onclick="sendQ('المحرك لا يشتغل')">محرك لا يشتغل</button>
-  <button class="qbtn" onclick="sendQ('دخان أسود وضعف في السحب')">دخان أسود</button>
-  <button class="qbtn" onclick="sendQ('ارتفاع درجة الحرارة')">ارتفاع الحرارة</button>
-  <button class="qbtn" onclick="sendQ('عطل AdBlue / SCR')">AdBlue / SCR</button>
-  <button class="qbtn" onclick="sendQ('ضعف القدرة بدون دخان')">ضعف القدرة</button>
-  <button class="qbtn" onclick="sendQ('تسريب هواء الفرامل')">تسريب هواء</button>
-  <button class="qbtn" onclick="sendQ('دخان أبيض عند التشغيل')">دخان أبيض</button>
-  <button class="qbtn" onclick="sendQ('البطارية لا تشحن')">بطارية</button>
-  <button class="qbtn" onclick="sendQ('ما هي مواعيد الصيانة الدورية لشاحنات المقالع؟')">صيانة دورية</button>
-</div>
-
-<!-- INPUT -->
-<div class="inp-area">
-  <div class="inp-row">
-    <textarea
-      id="inp"
-      placeholder="مثال: SITRAK C7H — 85,000 كم — دخان أسود عند التحميل..."
-      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg()}"
-    ></textarea>
-    <button class="btn-img" onclick="document.getElementById('file-input').click()" title="رفع صورة لوحة الأخطاء">📷</button>
-    <button class="btn-send" onclick="sendMsg()" title="إرسال">➤</button>
-  </div>
-
-  <div class="img-preview" id="img-preview">
-    <img id="preview-thumb" src="" alt=""/>
-    <div class="img-info">
-      <div class="img-name" id="preview-name">—</div>
-      <div class="img-size" id="preview-size">—</div>
+<!-- PAGE: MAINT -->
+<div class="page" id="pg-maint">
+  <div class="sec">تنبيهات الصيانة</div>
+  <div id="alist"><div class="empty"><div class="eico">✅</div><p>لا توجد تنبيهات حالياً</p></div></div>
+  <div class="sec" style="margin-top:20px">إضافة سجل صيانة</div>
+  <div class="card">
+    <div class="frow">
+      <select id="mt-tr"><option value="">اختر الشاحنة</option></select>
+      <select id="mt-ty">
+        <option>تغيير زيت المحرك</option><option>تغيير فلتر الهواء</option>
+        <option>تغيير فلتر الوقود</option><option>تغيير فلتر الزيت</option>
+        <option>فحص الفرامل</option><option>تشحيم الكردان</option>
+        <option>فحص البطاريات</option><option>إصلاح عطل</option>
+        <option>فحص دوري</option><option>أخرى</option>
+      </select>
     </div>
-    <button class="btn-clear" onclick="clearImage()" title="حذف الصورة">✕</button>
+    <div class="frow">
+      <input type="number" id="mt-km" placeholder="الكيلومترات الحالية"/>
+      <input type="number" id="mt-nk" placeholder="موعد الصيانة القادمة (كم)"/>
+    </div>
+    <div class="frow">
+      <input type="text" id="mt-no" placeholder="ملاحظة (اختياري)"/>
+      <input type="date" id="mt-dt"/>
+    </div>
+    <button class="btn-save" onclick="addMaint()">💾 حفظ السجل</button>
   </div>
-
-  <div class="inp-hint">Enter = إرسال &nbsp;|&nbsp; Shift+Enter = سطر جديد &nbsp;|&nbsp; 📷 = رفع صورة لوحة الأخطاء</div>
-  <input type="file" id="file-input" accept="image/*" onchange="handleImage(event)"/>
+  <div class="sec" style="margin-top:8px">سجل الصيانة الكامل</div>
+  <div class="fltrow"><select id="mf" onchange="renderMaint()"><option value="">كل الشاحنات</option></select></div>
+  <div class="mlist" id="mlist"><div class="empty"><div class="eico">📋</div><p>لا توجد سجلات بعد</p></div></div>
 </div>
+
+<!-- PAGE: CODES -->
+<div class="page" id="pg-codes">
+  <div class="sbar"><span class="sico">🔍</span><input type="text" id="csrch" placeholder="ابحث: SPN 110 · NOx · تيربو · ضغط..." oninput="filterCodes()"/></div>
+  <div class="sec">قاعدة بيانات الأكواد <span id="ccnt"></span></div>
+  <div class="clist" id="clist"></div>
+</div>
+
+<!-- PAGE: PARTS -->
+<div class="page" id="pg-parts">
+  <div class="sbar"><span class="sico">🔍</span><input type="text" id="psrch" placeholder="ابحث عن قطعة..." oninput="filterParts()"/></div>
+  <div class="sec">قطع الغيار <span>أسعار تقريبية بالدرهم المغربي</span></div>
+  <div class="pgrid" id="pgrid"></div>
+</div>
+
+</div><!-- /main -->
+</div><!-- /layout -->
+
+<!-- MOBILE NAV -->
+<nav class="mob-nav">
+  <button class="nb active" onclick="showPage('diag',this)"><span class="ni">🔧</span>تشخيص<div class="ndot" id="mdd"></div></button>
+  <button class="nb" onclick="showPage('maint',this)"><span class="ni">📋</span>صيانة<div class="ndot" id="mdm"></div></button>
+  <button class="nb" onclick="showPage('codes',this)"><span class="ni">📟</span>أكواد</button>
+  <button class="nb" onclick="showPage('parts',this)"><span class="ni">🔩</span>قطع الغيار</button>
+</nav>
+
+<div id="toast"></div>
 
 <script>
-// ===== KNOWLEDGE BASE =====
-const KB = `أنت مهندس صيانة شاحنات ثقيلة خبير بخبرة 30 سنة. تعمل في شركة EL BARRAY RA SARL AU المتخصصة في نقل الصخور والمقالع بالمغرب.
-
-=== هويتك ===
-خبير: MAN TGS / TGX / TGA (محركات D2066 و D2676)
-خبير: SITRAK C7H (تقنية MAN)
-خبير: Common Rail / EDC / SCR / AdBlue / Bosch
-خبير: كهرباء 24V / CAN BUS / أنظمة الفرامل الهوائية / هيدروليك PTO
-
-=== بيئة العمل ===
-مقالع — نقل الصخور — أحمال ثقيلة — غبار كثيف — حرارة الصحراء
-تصنيف: HEAVY DUTY SEVERE SERVICE
-→ تقصير جميع فترات الصيانة عن توصيات المصنع
-
-=== مواصفات الزيوت والسوائل المعتمدة ===
-زيت المحرك    : MAN M3677 — 5W-30 (أو M3277 / M3477 / M3575 / M3677 حسب المحرك)
-زيت القير      : MAN 342 M3
-زيت الديفرانسيل: MAN 342 M3
-الهيدروليك     : ISO VG 46 أو ISO VG 68 حسب الحرارة
-سائل التبريد   : MAN 324 Si-OAT — نسبة 50/50 مع ماء مقطر فقط
-AdBlue         : ISO 22241 معتمد فقط — لا يقبل بديل
-تشحيم          : تشحيم دوري للكردان والصلبات والبالونات ونقاط التشحيم
-
-=== تحذيرات سائل التبريد ===
-ممنوع: ماء الصنبور / خلط أنواع مختلفة / تشغيل بدون سائل
-
-=== مواعيد صيانة BARRAY (مخصصة للمقالع) ===
-أول صيانة   : 4000-5000 كم — إلزامية (زيت + فحص شامل + شد البراغي)
-زيت المحرك  : كل 25,000-30,000 كم (أيهما أولاً)
-فلتر الوقود  : كل 20,000-30,000 كم أو عند وجود ماء أو ضعف
-فلتر الهواء  : فحص أسبوعي + تنظيف دوري (بسبب الغبار الكثيف)
-فلتر الزيت  : مع كل تغيير زيت — لا يُعاد استعماله
-
-يومي  : زيت — ماء — هواء — إطارات — تسريبات — إنارة
-أسبوعي: بطاريات — شد البراغي — الكردان — فحص التسريبات
-شهري  : فرامل — ديفرانسيل — قير — ABS sensors — نظام هوائي
-
-=== أولويات السلامة (بهذا الترتيب) ===
-1. السلامة
-2. الفرامل
-3. التوجيه
-4. التعليق
-5. المحرك
-6. الكهرباء
-7. الراحة
-
-=== منهج التشخيص الإلزامي ===
-عند كل عطل استخدم هذا الهيكل حرفياً:
-
-🚛 نوع الشاحنة: [ما ذكره المستخدم]
-📍 الكيلومترات: [ما ذكره]
-⚠️ درجة الخطورة: [عالية 🔴 / متوسطة 🟡 / منخفضة 🟢]
-
-📋 الأسباب المحتملة (مرتبة من الأكثر احتمالاً):
-1. [السبب الأول — وسببه]
-2. [السبب الثاني]
-3. [السبب الثالث]
-
-🔍 خطوات الفحص (بالترتيب):
+const FLEET=[
+  {plate:'36719-A-68',model:'SITRAK C7H MC11',voy:103,ton:3198},
+  {plate:'36720-A-68',model:'SITRAK C7H MC11',voy:124,ton:3734},
+  {plate:'36721-A-68',model:'SITRAK C7H MC11',voy:113,ton:3312},
+  {plate:'36718-A-68',model:'SITRAK C7H MC11',voy:109,ton:3155},
+  {plate:'36597-A-68',model:'SITRAK C7H MC13',voy:120,ton:3685},
+  {plate:'36599-A-68',model:'SITRAK C7H MC13',voy:124,ton:3708},
+  {plate:'36598-A-68',model:'SITRAK C7H MC13',voy:125,ton:3743},
+  {plate:'36595-A-68',model:'SITRAK C7H MC13',voy:125,ton:3753},
+  {plate:'35800-A-68',model:'HOWO T7H',voy:117,ton:3501},
+  {plate:'35799-A-68',model:'HOWO T7H',voy:111,ton:3212},
+  {plate:'76988-H-1', model:'MAN TGS',voy:17, ton:502},
+  {plate:'76989-H-1', model:'MAN TGS',voy:70, ton:1855},
+  {plate:'36600-A-68',model:'SITRAK C7H MC11',voy:109,ton:3312},
+  {plate:'37913-A-68',model:'SITRAK C7H MC13',voy:73, ton:2819},
+  {plate:'37914-A-68',model:'SITRAK C7H MC13',voy:89, ton:3482},
+  {plate:'37915-A-68',model:'SITRAK C7H MC11',voy:81, ton:3109},
+  {plate:'37916-A-68',model:'SITRAK C7H MC11',voy:85, ton:3375},
+];
+const CODES=[
+  {code:'SPN 94', sys:'com',desc:'ضغط وقود منخفض',cause:'فلتر وقود مسدود أو مضخة تغذية ضعيفة',action:'تغيير فلتر الوقود أولاً ثم فحص المضخة'},
+  {code:'SPN 100',sys:'com',desc:'ضغط زيت المحرك منخفض',cause:'نقص الزيت أو مضخة زيت تالفة',action:'⛔ أوقف فوراً — فحص مستوى الزيت'},
+  {code:'SPN 102',sys:'com',desc:'ضغط هواء المشحن Boost',cause:'تسريب خرطوم تيربو أو Intercooler',action:'فحص جميع خراطيم الهواء بعد التيربو'},
+  {code:'SPN 110',sys:'com',desc:'حرارة سائل التبريد عالية',cause:'ترموستات أو مضخة ماء أو ردياتور',action:'⛔ أوقف — فحص مستوى MAN 324 Si-OAT'},
+  {code:'SPN 111',sys:'com',desc:'مستوى سائل التبريد منخفض',cause:'تسريب في نظام التبريد',action:'فحص الخراطيم والردياتور والقربة'},
+  {code:'SPN 157',sys:'com',desc:'ضغط Fuel Rail منخفض',cause:'مضخة ضغط عالي ضعيفة أو Rail Sensor',action:'قياس ضغط Rail — يجب 1600-1800 bar'},
+  {code:'SPN 190',sys:'com',desc:'حساس سرعة المحرك RPM',cause:'حساس CKP تالف أو سلك مقطوع',action:'فحص حساس الكرنك والكابل'},
+  {code:'SPN 412',sys:'com',desc:'حرارة غاز EGR عالية',cause:'صمام EGR عالق أو مسدود',action:'تنظيف أو استبدال صمام EGR'},
+  {code:'SPN 3031',sys:'com',desc:'مستوى AdBlue منخفض',cause:'AdBlue ناقص',action:'إضافة AdBlue ISO 22241 فوراً'},
+  {code:'SPN 3216',sys:'com',desc:'حساس NOx قبل SCR',cause:'حساس NOx تالف أو سلك مقطوع',action:'فحص حساس NOx والكابل والكنكتور'},
+  {code:'SPN 3226',sys:'com',desc:'حساس NOx بعد SCR',cause:'Catalyst تالف أو AdBlue رديء',action:'فحص جودة AdBlue + فحص المحفز SCR'},
+  {code:'SPN 3364',sys:'com',desc:'جودة AdBlue رديئة',cause:'AdBlue مغشوش أو ماء عادي',action:'تفريغ الخزان + ملء ISO 22241 أصلي'},
+  {code:'MID 128',sys:'man',desc:'خطأ وحدة EDC المحرك',cause:'خطأ داخلي في وحدة التحكم',action:'قراءة الأكواد بجهاز MAN-cats II'},
+  {code:'MID 130',sys:'man',desc:'خطأ وحدة ZF TCU',cause:'خطأ في علبة السرعات الأوتوماتيك',action:'فحص مستوى زيت MAN 342 M3'},
+  {code:'MID 136',sys:'man',desc:'خطأ وحدة ABS/EBS',cause:'حساس عجلة تالف أو سلك مقطوع',action:'فحص حساسات ABS الأربعة'},
+  {code:'MID 140',sys:'man',desc:'خطأ وحدة FFR العدادات',cause:'انقطاع CAN BUS أو مشكلة تغذية',action:'فحص CAN HIGH/LOW + الفيوزات'},
+  {code:'FMI 3',  sys:'man',desc:'جهد عالٍ على المدخل',cause:'قصر كهربائي على الخط',action:'فحص العزل والأسلاك والكنكتورات'},
+  {code:'FMI 4',  sys:'man',desc:'جهد منخفض على المدخل',cause:'قطع في السلك أو أرضي ضعيف',action:'فحص الأرضي أولاً ثم السلك'},
+  {code:'SCR-01', sys:'sit',desc:'خطأ عام منظومة SCR',cause:'NOx Sensor أو Catalyst أو AdBlue Pump',action:'فحص متدرج: NOx → Pump → Injector → Catalyst'},
+  {code:'SCR-02', sys:'sit',desc:'مضخة AdBlue لا تعمل',cause:'مضخة تالفة أو انسداد في الخط',action:'فحص التغذية الكهربائية للمضخة أولاً'},
+  {code:'SCR-03', sys:'sit',desc:'حاقن AdBlue مسدود',cause:'ترسبات أو AdBlue رديء',action:'تنظيف أو استبدال الحاقن'},
+  {code:'CBCU-01',sys:'sit',desc:'خطأ وحدة CBCU',cause:'أعطال متعددة غير مترابطة معاً',action:'فحص تغذية CBCU والأرضي أولاً'},
+  {code:'ABS-01', sys:'sit',desc:'حساس ABS عجلة أمامية',cause:'حساس تالف أو غبار في المحجر',action:'تنظيف الحساس + فحص المسافة والسلك'},
+  {code:'ZF-01',  sys:'sit',desc:'ضغط هواء القير منخفض',cause:'ضغط هواء النظام أقل من 6.5 bar',action:'فحص الضاغط + مجفف الهواء + التسريبات'},
+  {code:'ZF-02',  sys:'sit',desc:'حرارة زيت القير عالية',cause:'نقص زيت أو حمل زائد مستمر',action:'فحص مستوى زيت MAN 342 M3'},
+  {code:'ZF-03',  sys:'sit',desc:'حساس القابض Clutch',cause:'حساس موضع القابض تالف',action:'معايرة أو استبدال حساس القابض'},
+  {code:'EGR-01', sys:'man',desc:'صمام EGR عالق مفتوح',cause:'ترسبات كربونية في المحجر',action:'تنظيف العمق + فحص actuator'},
+  {code:'TC-01',  sys:'com',desc:'ضغط تيربو ضعيف',cause:'تسريب خرطوم أو تيربو تالف',action:'فحص الخراطيم أولاً ثم Wastegate/VGT'},
+  {code:'DPF-01', sys:'man',desc:'فلتر DPF مسدود',cause:'مسافات قصيرة + عدم إعادة التوليد',action:'إعادة توليد نشطة بجهاز التشخيص'},
+];
+const PARTS=[
+  {name:'فلتر زيت MAN D2066/D2676',price:'180–250',brand:'Mann / Hengst',compat:'MAN TGS/TGX/TGA'},
+  {name:'فلتر هواء SITRAK C7H',price:'350–500',brand:'Donaldson',compat:'SITRAK C7H'},
+  {name:'فلتر وقود MAN',price:'220–320',brand:'Mann / OE',compat:'MAN D2066/D2676'},
+  {name:'حساس NOx Bosch',price:'1800–2500',brand:'Bosch / OE',compat:'Euro 4/5/6'},
+  {name:'مضخة AdBlue',price:'2500–4000',brand:'Grundfos / OE',compat:'SCR System'},
+  {name:'حاقن AdBlue',price:'800–1200',brand:'Bosch',compat:'SCR System'},
+  {name:'ترموستات MAN D2066',price:'400–600',brand:'Wahler / Mahle',compat:'MAN D2066'},
+  {name:'بطارية 12V / 180Ah',price:'850–1200',brand:'Varta / Tudor',compat:'نظام 24V'},
+  {name:'سير دينامو MAN',price:'200–350',brand:'Gates / Conti',compat:'MAN / SITRAK'},
+  {name:'حساس MAP / BAP',price:'600–900',brand:'Bosch',compat:'Common Rail'},
+  {name:'صمام EGR',price:'1500–2500',brand:'BorgWarner',compat:'Euro 4/5'},
+  {name:'حساس ABS عجلة',price:'400–700',brand:'Wabco / OE',compat:'ABS System'},
+  {name:'غشاء غرفة فرامل',price:'150–250',brand:'Haldex',compat:'نظام هوائي'},
+  {name:'مجفف الهواء',price:'600–1000',brand:'Wabco / Knorr',compat:'Air System'},
+  {name:'زيت MAN M3677 5W-30 / 20L',price:'950–1200',brand:'MAN Original',compat:'D2066 / D2676'},
+  {name:'AdBlue ISO 22241 / 10L',price:'120–160',brand:'TotalEnergies',compat:'SCR System'},
+  {name:'سائل تبريد MAN Si-OAT / 5L',price:'280–380',brand:'MAN Original',compat:'MAN 324 Si-OAT'},
+  {name:'زيت قير MAN 342 M3 / 5L',price:'350–450',brand:'MAN Original',compat:'ZF / Differential'},
+];
+const KB=`أنت مهندس صيانة شاحنات ثقيلة خبير بخبرة 30 سنة في شركة EL BARRAY RA SARL AU — مقالع ونقل الصخور بالمغرب.
+تخصصك: MAN TGS/TGX/TGA (D2066/D2676) — SITRAK C7H MC11/MC13 — HOWO T7H — Common Rail/EDC/SCR/AdBlue/ZF/WABCO — كهرباء 24V
+بيئة: مقالع — غبار كثيف — أحمال ثقيلة — HEAVY DUTY SEVERE SERVICE
+→ زد احتمال الفلاتر والحساسات +40% — ضعف الأرضي سبب 30% من أعطال SITRAK
+مواصفات: زيت MAN M3677 5W-30 — تبريد MAN 324 Si-OAT 50/50 ماء مقطر — قير MAN 342 M3 — AdBlue ISO 22241
+مواعيد BARRAY: أول صيانة 4000-5000كم — زيت 25000-30000كم — فلتر وقود 20000-30000كم — هواء فحص أسبوعي
+هيكل الإجابة:
+🚛 الشاحنة: [النوع]
+📍 الكيلومترات: [العدد]
+⚠️ الخطورة: [عالية🔴/متوسطة🟡/منخفضة🟢]
+📋 الأسباب المحتملة:
+1. [الأول]
+2. [الثاني]
+3. [الثالث]
+🔍 خطوات الفحص:
 1. [خطوة 1]
 2. [خطوة 2]
 3. [خطوة 3]
-4. [خطوة 4 إن لزم]
+✅ التشخيص: [وصف]
+🛠️ الإصلاح: [الأرخص أولاً]
+⏱️ المدة: [تقدير]
+💰 التكلفة: [بالدرهم]
+🚦 مواصلة السير: نعم/لا
+قواعد: كهرباء←أرضي←حساس←تغذية←ضغط←ثم القطعة. أوقف فوراً عند ضغط زيت منخفض/حرارة حرجة/فرامل حرجة. إذا رأيت صورة استخرج الأكواد وفسّرها.`;
 
-✅ التشخيص المرجح: [وصف واضح]
-🛠️ الإصلاح المقترح: [ابدأ بالأرخص أولاً]
-⏱️ مدة الإصلاح: [تقدير زمني]
-💰 التكلفة التقريبية: [تقدير بالدرهم المغربي]
-🚦 هل يمكن مواصلة السير: نعم / لا — [السبب]
+let reports=[],maint=[],sel=null,history=[],pendImg=null;
+try{reports=JSON.parse(localStorage.getItem('bv4r')||'[]')}catch(e){}
+try{maint=JSON.parse(localStorage.getItem('bv4m')||'[]')}catch(e){}
+function save(){try{localStorage.setItem('bv4r',JSON.stringify(reports));localStorage.setItem('bv4m',JSON.stringify(maint))}catch(e){}}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2600)}
 
-=== قواعد التشخيص الصارمة ===
-1. قبل تغيير أي قطعة: تحقق من الكهرباء ← الأرضي ← الحساس ← التغذية ← الضغط ← ثم القطعة
-2. في بيئة المقالع: زد احتمال الفلاتر والحساسات والأسلاك والخراطيم +40%
-3. ضعف الأرضي مسؤول عن 30%+ من أعطال SITRAK — افحصه دائماً أولاً
-4. أوقف الشاحنة فوراً عند: ضغط زيت منخفض / حرارة حرجة / ضغط فرامل حرج
-5. إذا رأيت صورة: حللها واستخرج أكواد الأخطاء ووصف المشكلة بدقة
+function showPage(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.dn-btn,.nb').forEach(b=>b.classList.remove('active'));
+  document.getElementById('pg-'+id).classList.add('active');
+  btn.classList.add('active');
+  const pair={'diag':'diag','maint':'maint','codes':'codes','parts':'parts'};
+  document.querySelectorAll('.dn-btn,.nb').forEach(b=>{
+    if(b.getAttribute('onclick')&&b.getAttribute('onclick').includes("'"+id+"'"))b.classList.add('active');
+  });
+  if(id==='maint'){renderMaint();renderAlerts()}
+  if(id==='codes')renderCodes();
+  if(id==='parts')renderParts();
+}
 
-=== أنظمة الانبعاثات ===
-Euro 2/3 : بدون SCR — بدون AdBlue
-Euro 4/5 : SCR + AdBlue إلزامي — D2066 حتى Euro 5
-Euro 6   : SCR + AdBlue + EGR — D2676
+function updateMetrics(){
+  const hi=reports.filter(r=>r.sev==='عالية').length;
+  const al=getAlerts().length;
+  ['m-rep','sb-rep'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=reports.length});
+  ['m-hi','sb-hi'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=hi});
+  ['m-alr','sb-alr'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=al});
+  ['dd','mdd'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display=hi>0?'block':'none'});
+  ['dm','mdm'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display=al>0?'block':'none'});
+}
 
-=== الأعطال الشائعة SITRAK في المقالع ===
-- ضعف الأرضي → أعطال كهربائية متعددة وغير مترابطة
-- حساسات ABS → رسائل متكررة على لوحة العدادات
-- AdBlue / NOx → تقليص القدرة التلقائي (Derate)
-- تسربات هواء → ضعف فرامل وبطء في الضغط
-- فلتر هواء مسدود → دخان أسود وضعف واضح
+function renderFleet(){
+  const g=document.getElementById('fgrid');
+  const mt=document.getElementById('mt-tr');
+  const mf=document.getElementById('mf');
+  mt.innerHTML='<option value="">اختر الشاحنة</option>';
+  mf.innerHTML='<option value="">كل الشاحنات</option>';
+  g.innerHTML=FLEET.map((t,i)=>{
+    const rc=reports.filter(r=>r.plate===t.plate).length;
+    const hi=reports.filter(r=>r.plate===t.plate&&r.sev==='عالية').length;
+    const cls=hi>0?'terr':rc>0?'twn':'tok';
+    const lbl=hi>0?'⚠ خطر':rc>0?rc+' تقرير':'✓ سليم';
+    const isSel=sel&&sel.plate===t.plate?'sel':'';
+    mt.innerHTML+=`<option value="${t.plate}">${t.plate}</option>`;
+    mf.innerHTML+=`<option value="${t.plate}">${t.plate}</option>`;
+    return `<div class="fc ${isSel}" onclick="selectTruck(${i})">
+      <div class="fc-plate">${t.plate}</div>
+      <div class="fc-model">${t.model}</div>
+      <span class="fc-tag ${cls}">${lbl}</span>
+    </div>`;
+  }).join('');
+}
 
-=== الأعطال الشائعة MAN D2066 / D2676 ===
-- Common Rail: ضغط وقود منخفض / بخاخات / مضخة ضغط عالي / Rail Pressure Sensor
-- Turbo: فقدان قوة / دخان أسود / صفير / فحص الخراطيم والـ Intercooler والـ Wastegate أو VGT
-- EGR: دخان أسود مع بلوغ حرارة عالية
-- SCR: حساس NOx / Catalyst / Pump / Injector
+function selectTruck(i){
+  sel=FLEET[i];history=[];renderFleet();
+  document.getElementById('sel-lbl').textContent=sel.plate;
+  document.getElementById('msgs').innerHTML=`<div class="msg"><div class="av ai">🤖</div>
+  <div class="bub ai"><strong>${sel.plate}</strong> — ${sel.model}<br>
+  <span style="color:var(--tx3);font-size:11px">رحلات مايو: ${sel.voy} · أطنان: ${sel.ton.toLocaleString()} T</span><br><br>ما العطل؟</div></div>`;
+}
 
-=== عند تحليل الصور ===
-إذا أرسل المستخدم صورة:
-1. اذكر ما تراه بدقة
-2. استخرج جميع أكواد الأخطاء المرئية
-3. فسّر كل كود
-4. أعط التشخيص المبني على الصورة`;
-
-// ===== STATE =====
-let history = [];
-let pendingImage = null;
-let pendingImageName = '';
-let pendingImageSize = '';
-
-// ===== IMAGE HANDLING =====
-function handleImage(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = (ev) => {
-    pendingImage = ev.target.result;
-    pendingImageName = file.name;
-    pendingImageSize = (file.size / 1024).toFixed(0) + ' KB';
-    document.getElementById('preview-thumb').src = pendingImage;
-    document.getElementById('preview-name').textContent = file.name;
-    document.getElementById('preview-size').textContent = pendingImageSize;
-    document.getElementById('img-preview').style.display = 'flex';
+function handleImg(e){
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    pendImg=ev.target.result;
+    document.getElementById('pimg').src=pendImg;
+    document.getElementById('pname').textContent=f.name;
+    document.getElementById('psize').textContent=(f.size/1024).toFixed(0)+' KB';
+    document.getElementById('prevbar').style.display='flex';
   };
-  reader.readAsDataURL(file);
-  e.target.value = '';
+  r.readAsDataURL(f);e.target.value='';
+}
+function clearImg(){pendImg=null;document.getElementById('prevbar').style.display='none'}
+
+function addMsg(role,text,imgSrc){
+  const msgs=document.getElementById('msgs');
+  const div=document.createElement('div');
+  div.className='msg'+(role==='u'?' u':'');
+  let html=`<div class="av ${role}">${role==='u'?'👤':'🤖'}</div><div class="bub ${role}">`;
+  if(imgSrc)html+=`<img src="${imgSrc}" alt=""/>`;
+  if(text)html+=text.replace(/\n/g,'<br>');
+  html+='</div>';
+  div.innerHTML=html;
+  msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;
 }
 
-function clearImage() {
-  pendingImage = null;
-  pendingImageName = '';
-  document.getElementById('img-preview').style.display = 'none';
-  document.getElementById('preview-thumb').src = '';
+function addTyping(){
+  const msgs=document.getElementById('msgs');
+  const div=document.createElement('div');div.className='msg';div.id='typing';
+  div.innerHTML=`<div class="av ai">🤖</div><div class="bub ai"><div class="tyd"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>`;
+  msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;
 }
 
-// ===== MESSAGES =====
-function addMsg(role, text, imgSrc) {
-  const msgs = document.getElementById('msgs');
-  const div = document.createElement('div');
-  div.className = 'msg' + (role === 'user' ? ' user' : '');
-  const ico = role === 'user' ? '👤' : '🤖';
-  let html = `<div class="av ${role}">${ico}</div><div class="bub ${role}">`;
-  if (imgSrc) html += `<img src="${imgSrc}" alt="صورة العطل"/>`;
-  if (text) html += text.replace(/\n/g, '<br>');
-  html += '</div>';
-  div.innerHTML = html;
-  msgs.appendChild(div);
-  msgs.scrollTop = msgs.scrollHeight;
+function saveReport(t,query,reply){
+  const sev=reply.includes('عالية')?'عالية':reply.includes('متوسطة')?'متوسطة':'منخفضة';
+  const nm=(reply.match(/🔧.*?:\s*([^\n]+)/)||[])[1]?.trim()||query.substring(0,35);
+  reports.push({id:Date.now(),plate:t.plate,model:t.model,date:new Date().toLocaleDateString('fr-MA'),query,reply,sev,nm});
+  save();updateMetrics();renderFleet();toast('✅ تم حفظ تقرير العطل');
 }
 
-function addTyping() {
-  const msgs = document.getElementById('msgs');
-  const div = document.createElement('div');
-  div.className = 'msg'; div.id = 'typing';
-  div.innerHTML = `<div class="av ai">🤖</div><div class="bub ai"><div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>`;
-  msgs.appendChild(div);
-  msgs.scrollTop = msgs.scrollHeight;
-}
-
-// ===== SEND MESSAGE =====
-async function sendMsg() {
-  const inp = document.getElementById('inp');
-  const text = inp.value.trim();
-  if (!text && !pendingImage) return;
-
-  inp.value = '';
-  inp.style.height = '42px';
-
-  // عرض رسالة المستخدم
-  const displayText = text || '';
-  addMsg('user', displayText, pendingImage);
-
-  // بناء محتوى الرسالة للـ API
+async function sendMsg(){
+  const inp=document.getElementById('inp');
+  const text=inp.value.trim();
+  if(!text&&!pendImg)return;
+  if(!sel){toast('⚠ اختر شاحنة أولاً');return;}
+  inp.value='';inp.style.height='40px';
+  addMsg('u',text,pendImg);
   let content;
-  if (pendingImage) {
-    const base64 = pendingImage.split(',')[1];
-    const mediaType = pendingImage.match(/data:(image\/\w+);/)?.[1] || 'image/jpeg';
-    content = [];
-    if (text) content.push({ type: 'text', text: text });
-    content.push({ type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } });
-    if (!text) content.push({ type: 'text', text: 'حلل هذه الصورة واستخرج جميع أكواد الأخطاء والمشاكل الظاهرة وأعط التشخيص.' });
-  } else {
-    content = text;
-  }
-
-  history.push({ role: 'user', content: content });
-  clearImage();
-  addTyping();
-
-  try {
-    const res = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 1500,
-        system: KB,
-        messages: history
-      })
-    });
-
-    const data = await res.json();
-
-    if (data.error) {
-      throw new Error(data.error.message || 'خطأ من الـ API');
-    }
-
-    const reply = data.content?.[0]?.text || 'لم تصل استجابة.';
+  if(pendImg){
+    const b64=pendImg.split(',')[1];
+    const mt2=pendImg.match(/data:(image\/\w+);/)?.[1]||'image/jpeg';
+    content=[];
+    if(text)content.push({type:'text',text});
+    content.push({type:'image',source:{type:'base64',media_type:mt2,data:b64}});
+    if(!text)content.push({type:'text',text:'حلل الصورة واستخرج الأكواد والمشاكل.'});
+  }else{content=`[${sel.plate}|${sel.model}] ${text}`;}
+  history.push({role:'user',content:typeof content==='string'?content:content});
+  clearImg();addTyping();
+  try{
+    const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1500,system:KB,messages:history})});
+    const data=await res.json();
+    if(data.error)throw new Error(data.error.message);
+    const reply=data.content?.[0]?.text||'لم تصل استجابة.';
     document.getElementById('typing')?.remove();
-    addMsg('ai', reply);
-    history.push({ role: 'assistant', content: reply });
-
-  } catch(e) {
+    addMsg('ai',reply);
+    history.push({role:'assistant',content:reply});
+    if(reply.includes('🔧'))saveReport(sel,text,reply);
+  }catch(e){
     document.getElementById('typing')?.remove();
-    addMsg('ai', '❌ خطأ: ' + e.message + '\n\nتأكد أن السيرفر يعمل (node server.js) وأن المفتاح صحيح.');
+    addMsg('ai','❌ '+e.message);
   }
 }
+async function sendQ(t){document.getElementById('inp').value=t;await sendMsg();}
+document.getElementById('inp').addEventListener('input',function(){this.style.height='40px';this.style.height=Math.min(this.scrollHeight,100)+'px'});
 
-async function sendQ(t) {
-  document.getElementById('inp').value = t;
-  await sendMsg();
+function getAlerts(){return maint.filter(r=>r.nk&&r.km).map(r=>({...r,diff:r.nk-r.km})).filter(r=>r.diff<=2000)}
+
+function renderAlerts(){
+  const al=getAlerts();
+  const list=document.getElementById('alist');
+  if(!al.length){list.innerHTML='<div class="empty"><div class="eico">✅</div><p>لا توجد تنبيهات حالياً</p></div>';return;}
+  list.innerHTML=al.map(a=>`<div class="alrt ${a.diff<=0?'h':'m'}">
+    <span style="font-size:22px;flex-shrink:0">${a.diff<=0?'🔴':'🟡'}</span>
+    <div><div class="ah">${a.plate} — ${a.type}</div>
+    <div class="ab">${a.diff<=0?'⛔ تجاوز موعد الصيانة!':'متبقي '+a.diff.toLocaleString()+' كم للصيانة القادمة'}</div></div>
+  </div>`).join('');
 }
 
-// ===== AUTO RESIZE TEXTAREA =====
-document.getElementById('inp').addEventListener('input', function() {
-  this.style.height = '42px';
-  this.style.height = Math.min(this.scrollHeight, 110) + 'px';
-});
+function addMaint(){
+  const plate=document.getElementById('mt-tr').value;
+  const type=document.getElementById('mt-ty').value;
+  const km=parseInt(document.getElementById('mt-km').value)||0;
+  const nk=parseInt(document.getElementById('mt-nk').value)||0;
+  const no=document.getElementById('mt-no').value;
+  const dt=document.getElementById('mt-dt').value||new Date().toLocaleDateString('fr-MA');
+  if(!plate){toast('⚠ اختر الشاحنة');return;}
+  maint.push({id:Date.now(),plate,type,km,nk,no,dt});
+  save();renderMaint();renderAlerts();updateMetrics();
+  ['mt-km','mt-nk','mt-no'].forEach(id=>document.getElementById(id).value='');
+  toast('✅ تم حفظ سجل الصيانة');
+}
+
+function renderMaint(){
+  const filter=document.getElementById('mf').value;
+  const list=document.getElementById('mlist');
+  const data=filter?maint.filter(r=>r.plate===filter):[...maint].reverse();
+  if(!data.length){list.innerHTML='<div class="empty"><div class="eico">📋</div><p>لا توجد سجلات بعد</p></div>';return;}
+  list.innerHTML=data.map(r=>`<div class="mi">
+    <div class="mi-top">
+      <span class="mi-plate">${r.plate}</span>
+      <span class="mi-type">${r.type}</span>
+      <span class="mi-date">${r.dt}</span>
+      <button class="mi-del" onclick="delMaint(${r.id})">🗑</button>
+    </div>
+    <div class="mi-note">${r.no||'—'}</div>
+    <div class="mi-km">📍 ${r.km.toLocaleString()} كم${r.nk?' ← صيانة قادمة: '+r.nk.toLocaleString()+' كم':''}</div>
+  </div>`).join('');
+}
+function delMaint(id){maint=maint.filter(r=>r.id!==id);save();renderMaint();renderAlerts();updateMetrics();toast('تم الحذف')}
+
+function renderCodes(list){
+  const data=list||CODES;
+  document.getElementById('ccnt').textContent=data.length+' كود';
+  document.getElementById('clist').innerHTML=data.map(c=>{
+    const cls=c.sys==='man'?'sm':c.sys==='sit'?'ss':'sc2';
+    const lbl=c.sys==='man'?'MAN':c.sys==='sit'?'SITRAK':'مشترك';
+    return `<div class="ci">
+      <div class="ci-top"><span class="ci-code">${c.code}</span><span class="ci-sys ${cls}">${lbl}</span></div>
+      <div class="ci-desc">${c.desc}</div>
+      <div class="ci-cause">📋 ${c.cause}</div>
+      <div class="ci-act">🔧 ${c.action}</div>
+    </div>`;
+  }).join('');
+}
+function filterCodes(){
+  const q=document.getElementById('csrch').value.toLowerCase();
+  if(!q){renderCodes();return;}
+  renderCodes(CODES.filter(c=>c.code.toLowerCase().includes(q)||c.desc.toLowerCase().includes(q)||c.cause.toLowerCase().includes(q)||c.action.toLowerCase().includes(q)));
+}
+
+function renderParts(list){
+  const data=list||PARTS;
+  document.getElementById('pgrid').innerHTML=data.map(p=>`<div class="pc">
+    <div class="pc-name">${p.name}</div>
+    <div class="pc-price">${p.price} <span class="pc-unit">درهم</span></div>
+    <div class="pc-compat">${p.compat}</div>
+    <div class="pc-brand">🏷 ${p.brand}</div>
+  </div>`).join('');
+}
+function filterParts(){
+  const q=document.getElementById('psrch').value.toLowerCase();
+  if(!q){renderParts();return;}
+  renderParts(PARTS.filter(p=>p.name.toLowerCase().includes(q)||p.compat.toLowerCase().includes(q)||p.brand.toLowerCase().includes(q)));
+}
+
+renderFleet();updateMetrics();renderCodes();renderParts();
 </script>
 </body>
 </html>
