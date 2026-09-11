@@ -1,9 +1,15 @@
 import { getSession } from "@/lib/auth";
 import { getDictionary } from "@/i18n/dictionaries";
-import { PagePlaceholder } from "@/components/page-placeholder";
+import { AssistantChat } from "@/components/assistant-chat";
 
-export default async function Page() {
+export default async function AssistantPage() {
   const session = await getSession();
   const dict = getDictionary(session!.locale);
-  return <PagePlaceholder locale={session!.locale} title={dict.nav.assistant} />;
+
+  return (
+    <div className="space-y-4">
+      <h1 className="text-xl font-semibold">{dict.nav.assistant}</h1>
+      <AssistantChat locale={session!.locale} />
+    </div>
+  );
 }

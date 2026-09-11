@@ -12,3 +12,4 @@ export * from "./repositories/expenses";
 export * from "./repositories/landed-costs";
 export * from "./repositories/customs";
 export * from "./repositories/inventory";
+export * from "./repositories/assistant";

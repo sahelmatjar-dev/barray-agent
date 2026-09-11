@@ -41,6 +41,10 @@ export async function getOpportunity(id: string): Promise<OpportunityRow | null>
   return queryOne<OpportunityRow>(`SELECT * FROM opportunities WHERE id = $1`, [id]);
 }
 
+export async function getOpportunityByCode(code: string): Promise<OpportunityRow | null> {
+  return queryOne<OpportunityRow>(`SELECT * FROM opportunities WHERE code = $1`, [code]);
+}
+
 /** Owner Command Center: everything currently sitting at a human approval gate. */
 export async function listDecisionsWaiting(): Promise<OpportunityRow[]> {
   return query<OpportunityRow>(
