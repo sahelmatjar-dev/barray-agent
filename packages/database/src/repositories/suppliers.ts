@@ -6,6 +6,13 @@ export interface SupplierRow {
   legal_name: string;
   trade_name: string | null;
   country: string;
+  legal_existence_verified: boolean;
+  years_active: number | null;
+  is_truck_specialist: boolean;
+  third_party_audit: boolean;
+  export_evidence: boolean;
+  digital_presence_score: number | null;
+  communication_quality_score: number | null;
   trust_score: number | null;
   trust_risk_group: string | null;
   fraud_risk: string | null;

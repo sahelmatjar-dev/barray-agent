@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifySessionToken } from "./lib/session";
 
 const SESSION_COOKIE = "barray_session";
-const PUBLIC_PATHS = ["/login", "/api/auth/login"];
+// /api/internal/* uses its own Bearer-token auth (assertInternalApiAuth), not
+// the user session cookie — n8n calls these routes, never a logged-in browser.
+const PUBLIC_PATHS = ["/login", "/api/auth/login", "/api/internal/"];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
