@@ -1,12 +1,29 @@
 {
-  "name": "barray-truck-agent",
-  "version": "3.0.0",
-  "description": "BARRAY Fleet Manager - Truck Diagnostic Agent",
-  "main": "server.js",
+  "name": "el-barray-ra-sitrak-sourcing-os",
+  "version": "0.1.0",
+  "private": true,
+  "description": "EL BARRAY RA — SITRAK China Sourcing OS (donor truck sourcing, dismantling, import, inventory).",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "start": "node server.js"
+    "db:migrate": "node scripts/migrate.js up",
+    "db:migrate:status": "node scripts/migrate.js status",
+    "db:seed": "node scripts/seed.js",
+    "db:reset": "node scripts/reset.js",
+    "dev": "npm run dev --workspace=apps/dashboard",
+    "build": "npm run build --workspace=apps/dashboard",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "npm run lint --workspace=apps/dashboard"
+  },
+  "devDependencies": {
+    "pg": "^8.13.1",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   }
 }
