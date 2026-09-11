@@ -24,3 +24,14 @@ export async function getRfq(id: string): Promise<RfqRow | null> {
 export async function listRfqItems(rfqId: string) {
   return query(`SELECT * FROM rfq_items WHERE rfq_id = $1 ORDER BY item_type`, [rfqId]);
 }
+
+/** WF-008 email intake: matches an inbound email to its opportunity via the
+ * Gmail thread it belongs to. Returns null (unmatched) rather than guessing. */
+export async function findRfqByGmailThreadId(threadId: string): Promise<(RfqRow & { opportunity_code: string }) | null> {
+  return queryOne(
+    `SELECT r.*, o.code AS opportunity_code FROM rfqs r
+     JOIN opportunities o ON o.id = r.opportunity_id
+     WHERE r.gmail_thread_id = $1`,
+    [threadId],
+  );
+}

@@ -45,6 +45,42 @@ export async function getOpportunityByCode(code: string): Promise<OpportunityRow
   return queryOne<OpportunityRow>(`SELECT * FROM opportunities WHERE code = $1`, [code]);
 }
 
+export interface NormalizedListingInput {
+  platform: string; listingUrl: string; brand: string; model: string; configuration: string;
+  year: number | null; askingPrice: number | null; currency: string; locationCity: string | null;
+  description: string | null;
+}
+
+/** WF-002: inserts a normalized listing as a new DISCOVERED opportunity.
+ * Fields the raw listing didn't have parse out to null/UNKNOWN — this
+ * function never fabricates a value that wasn't in the source text. */
+export async function createOpportunityFromListing(input: NormalizedListingInput): Promise<{ id: string; code: string }> {
+  // Idempotency for repeated discovery of the same listing is handled by the
+  // caller (n8n's workflow_runs check, keyed on listingUrl) — see WF-002.
+  const row = await queryOne<{ id: string; code: string }>(
+    `INSERT INTO opportunities (platform, listing_url, brand, model, configuration, year, asking_price, currency, location_city, description, availability, status)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'UNKNOWN', 'DISCOVERED')
+     RETURNING id, code`,
+    [input.platform, input.listingUrl, input.brand, input.model, input.configuration, input.year, input.askingPrice, input.currency, input.locationCity, input.description],
+  );
+  return row!;
+}
+
+/** WF-003: flags (never silently merges) a duplicate VIN across opportunities. */
+export async function markDuplicateIfVinExists(opportunityId: string): Promise<string | null> {
+  const current = await queryOne<{ vin: string | null }>(`SELECT vin FROM opportunities WHERE id = $1`, [opportunityId]);
+  if (!current?.vin) return null;
+
+  const duplicate = await queryOne<{ id: string }>(
+    `SELECT id FROM opportunities WHERE vin = $1 AND id != $2 ORDER BY discovered_at ASC LIMIT 1`,
+    [current.vin, opportunityId],
+  );
+  if (!duplicate) return null;
+
+  await query(`UPDATE opportunities SET duplicate_of = $1 WHERE id = $2`, [duplicate.id, opportunityId]);
+  return duplicate.id;
+}
+
 /** Owner Command Center: everything currently sitting at a human approval gate. */
 export async function listDecisionsWaiting(): Promise<OpportunityRow[]> {
   return query<OpportunityRow>(

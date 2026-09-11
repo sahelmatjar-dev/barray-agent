@@ -14,3 +14,4 @@ export * from "./customs";
 export * from "./bank-account-guard";
 export * from "./assistant-intent";
 export * from "./assistant-formatter";
+export * from "./listing-normalizer";

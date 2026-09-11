@@ -23,3 +23,26 @@ export function etaDriftDays(eta: string | null, originalEta: string | null): nu
   const diffMs = new Date(eta).getTime() - new Date(originalEta).getTime();
   return Math.round(diffMs / (1000 * 60 * 60 * 24));
 }
+
+export interface ShipmentDriftAlert {
+  shipmentId: string; containerNumber: string; driftDays: number;
+}
+
+/** WF-022: finds every active shipment whose ETA has drifted more than
+ * ETA_DRIFT_ALERT_DAYS from its original estimate. Pure read — the caller
+ * decides what to do (write an alert row), keeping this testable without I/O side effects. */
+export async function findShipmentsWithEtaDrift(): Promise<ShipmentDriftAlert[]> {
+  const shipments = await query<{ id: string; container_number: string; eta: string | null; original_eta: string | null }>(
+    `SELECT s.id, c.container_number, s.eta, s.original_eta FROM shipments s
+     JOIN containers c ON c.id = s.container_id
+     WHERE s.status NOT IN ('DELIVERED')`,
+  );
+  const alerts: ShipmentDriftAlert[] = [];
+  for (const s of shipments) {
+    const drift = etaDriftDays(s.eta, s.original_eta);
+    if (drift !== null && Math.abs(drift) > ETA_DRIFT_ALERT_DAYS) {
+      alerts.push({ shipmentId: s.id, containerNumber: s.container_number, driftDays: drift });
+    }
+  }
+  return alerts;
+}

@@ -27,3 +27,4 @@ export * from "./repositories/claims";
 export * from "./repositories/analytics";
 export * from "./repositories/warehouses";
 export * from "./repositories/settings";
+export * from "./repositories/alerts";
