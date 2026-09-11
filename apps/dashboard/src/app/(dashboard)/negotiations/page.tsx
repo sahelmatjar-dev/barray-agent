@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getSession } from "@/lib/auth";
 import { getDictionary } from "@/i18n/dictionaries";
 import { listNegotiations } from "@barray/database";
@@ -29,7 +30,9 @@ export default async function NegotiationsPage() {
             <tbody>
               {negotiations.map((n: Record<string, unknown>) => (
                 <tr key={n.id as string} className="border-t border-slate-800 hover:bg-slate-900/60">
-                  <td className="p-3">{n.opportunity_code as string}</td>
+                  <td className="p-3">
+                    <Link href={`/negotiations/${n.id}`} className="text-amber-400 hover:underline">{n.opportunity_code as string}</Link>
+                  </td>
                   <td className="p-3">{n.supplier_name as string}</td>
                   <td className="p-3">{Number(n.asking_price).toLocaleString()}</td>
                   <td className="p-3">{Number(n.target_price).toLocaleString()}</td>

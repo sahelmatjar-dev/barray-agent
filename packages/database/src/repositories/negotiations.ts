@@ -34,6 +34,29 @@ export async function listNegotiationMessages(negotiationId: string) {
   return query(`SELECT * FROM negotiation_messages WHERE negotiation_id = $1 ORDER BY created_at`, [negotiationId]);
 }
 
+export interface NegotiationMessageSendContext {
+  id: string; body: string; status: string; negotiation_id: string;
+  supplier_email: string | null; supplier_name: string; opportunity_code: string;
+}
+
+export async function getNegotiationMessageSendContext(messageId: string): Promise<NegotiationMessageSendContext | null> {
+  return queryOne<NegotiationMessageSendContext>(
+    `SELECT nm.id, nm.body, nm.status, nm.negotiation_id,
+            sc.email AS supplier_email, s.legal_name AS supplier_name, o.code AS opportunity_code
+     FROM negotiation_messages nm
+     JOIN negotiations n ON n.id = nm.negotiation_id
+     JOIN suppliers s ON s.id = n.supplier_id
+     JOIN opportunities o ON o.id = n.opportunity_id
+     LEFT JOIN supplier_contacts sc ON sc.supplier_id = s.id AND sc.is_primary = true
+     WHERE nm.id = $1`,
+    [messageId],
+  );
+}
+
+export async function markNegotiationMessageSent(messageId: string, gmailMessageId: string): Promise<void> {
+  await query(`UPDATE negotiation_messages SET status = 'SENT', gmail_message_id = $1 WHERE id = $2`, [gmailMessageId, messageId]);
+}
+
 export async function createNegotiationMessage(input: {
   negotiationId: string; direction: "OUTBOUND" | "INBOUND"; draftedByAi: boolean;
   proposedPrice: number | null; body: string;

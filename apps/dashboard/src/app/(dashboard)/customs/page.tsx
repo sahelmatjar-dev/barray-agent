@@ -1,11 +1,13 @@
 import { getSession } from "@/lib/auth";
 import { getDictionary } from "@/i18n/dictionaries";
 import { listCustomsRecords } from "@barray/database";
+import { CustomsVerifyForm } from "@/components/customs-verify-form";
 
 export default async function CustomsPage() {
   const session = await getSession();
   const dict = getDictionary(session!.locale);
   const records = await listCustomsRecords();
+  const canVerify = session!.roles.some((r) => ["OWNER", "PROCUREMENT_MANAGER", "LOGISTICS"].includes(r));
 
   return (
     <div className="space-y-4">
@@ -31,6 +33,9 @@ export default async function CustomsPage() {
                   {r.confidence ? `, ${r.confidence}% confidence` : ""})
                 </p>
                 {reason && <p className="text-sm text-slate-400">{reason}</p>}
+                {!r.customs_verified && canVerify && (
+                  <CustomsVerifyForm recordId={r.id as string} candidateHsCode={r.candidate_hs_code as string | null} />
+                )}
                 {flagged && (
                   <p className="mt-2 rounded-md bg-red-950/60 px-3 py-2 text-sm font-medium text-red-300">
                     CUSTOMS REVIEW REQUIRED — POSSIBLE GIR 2(a) CLASSIFICATION
