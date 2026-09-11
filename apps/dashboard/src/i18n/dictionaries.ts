@@ -42,6 +42,7 @@ export const dictionaries = {
       supplier_approvals: "موافقات الموردين",
       inspection_approvals: "موافقات الفحص",
       purchase_approvals: "موافقات الشراء",
+      payment_releases: "إفراجات الدفع",
     },
   },
   fr: {
@@ -81,6 +82,7 @@ export const dictionaries = {
       supplier_approvals: "Approbations fournisseurs",
       inspection_approvals: "Approbations d'inspection",
       purchase_approvals: "Approbations d'achat",
+      payment_releases: "Libérations de paiement",
     },
   },
   en: {
@@ -120,6 +122,7 @@ export const dictionaries = {
       supplier_approvals: "Supplier approvals",
       inspection_approvals: "Inspection approvals",
       purchase_approvals: "Purchase approvals",
+      payment_releases: "Payment releases",
     },
   },
 } as const;

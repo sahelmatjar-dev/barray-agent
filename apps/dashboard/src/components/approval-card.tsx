@@ -9,6 +9,7 @@ const GATE_LABEL: Record<string, Record<Locale, string>> = {
   APPROVE_SUPPLIER: { ar: "موافقة مورد", fr: "Approbation fournisseur", en: "Supplier approval" },
   APPROVE_INSPECTION: { ar: "موافقة فحص", fr: "Approbation inspection", en: "Inspection approval" },
   APPROVE_PURCHASE: { ar: "موافقة شراء", fr: "Approbation achat", en: "Purchase approval" },
+  RELEASE_PAYMENT: { ar: "الإفراج عن الدفع", fr: "Libération du paiement", en: "Release payment" },
 };
 
 const RISK_COLOR: Record<string, string> = {
@@ -67,7 +68,11 @@ export function ApprovalCard({ card, locale }: { card: OwnerDecisionCard; locale
       </div>
 
       <div>
-        <div className="font-semibold text-slate-100">{card.truckLabel ?? "—"}</div>
+        <div className="font-semibold text-slate-100">
+          {card.gate === "RELEASE_PAYMENT"
+            ? `${card.paymentAmount?.toLocaleString() ?? "—"} ${card.currency ?? ""}`
+            : (card.truckLabel ?? "—")}
+        </div>
         <div className="text-sm text-slate-400">{card.supplierName ?? "—"} · VIN: {card.vin ?? "UNKNOWN"}</div>
       </div>
 

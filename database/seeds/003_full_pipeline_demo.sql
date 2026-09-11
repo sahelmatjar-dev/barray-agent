@@ -24,6 +24,7 @@ DECLARE
   v_po_id UUID;
   v_bank_account_id UUID;
   v_payment_id UUID;
+  v_payment_pending_id UUID;
   v_donor_id UUID;
   v_donor_code TEXT;
   v_part_engine_id UUID;
@@ -208,13 +209,19 @@ BEGIN
     (v_po_id, 'SITRAK G7 8x4 donor truck', 1, 14800, 'USD');
 
   -- ---- Payment (requires a decided RELEASE_PAYMENT approval before RELEASED) -------
+  -- Created VERIFIED first (no release_approval_id yet), matching the real flow:
+  -- payment verified -> RELEASE_PAYMENT approval requested against the payment
+  -- itself -> owner decides -> a separate release step flips it to RELEASED.
+  INSERT INTO payments (purchase_order_id, amount, currency, payment_type, beneficiary_bank_account_id, method, reference, status)
+  VALUES (v_po_id, 14800, 'USD', 'FULL', v_bank_account_id, 'WIRE', 'TEST-WIRE-REF-0001', 'VERIFIED')
+  RETURNING id INTO v_payment_id;
+
   INSERT INTO approvals (gate, entity, entity_id, requested_by, decided_by, decision, decision_reason, snapshot, decided_at, status)
-  VALUES ('RELEASE_PAYMENT', 'payment', v_po_id, v_owner_id, v_owner_id, 'APPROVED', 'Bank account verified, matches company name, no recent change.', '{}', now() - interval '35 days', 'APPROVED')
+  VALUES ('RELEASE_PAYMENT', 'payment', v_payment_id, v_owner_id, v_owner_id, 'APPROVED', 'Bank account verified, matches company name, no recent change.', '{}', now() - interval '35 days', 'APPROVED')
   RETURNING id INTO v_approval_payment_id;
 
-  INSERT INTO payments (purchase_order_id, release_approval_id, amount, currency, payment_type, beneficiary_bank_account_id, method, reference, released_by, released_at, status)
-  VALUES (v_po_id, v_approval_payment_id, 14800, 'USD', 'FULL', v_bank_account_id, 'WIRE', 'TEST-WIRE-REF-0001', v_owner_id, now() - interval '35 days', 'RELEASED')
-  RETURNING id INTO v_payment_id;
+  UPDATE payments SET status = 'RELEASED', release_approval_id = v_approval_payment_id, released_by = v_owner_id, released_at = now() - interval '35 days'
+  WHERE id = v_payment_id;
 
   INSERT INTO payment_verifications (payment_id, check_type, passed, details) VALUES
     (v_payment_id, 'BANK_NAME_MATCH', true, 'Account holder matches supplier legal name.'),
@@ -222,6 +229,22 @@ BEGIN
     (v_payment_id, 'ACCOUNT_UNCHANGED', true, 'No change since last verified payment.'),
     (v_payment_id, 'AMOUNT_MATCHES_PO', true, 'Amount equals PO agreed price.'),
     (v_payment_id, 'SUPPLIER_NOT_FROZEN', true, 'Supplier status is APPROVED.');
+
+  -- A second, still-pending payment so the Owner Command Center has a live
+  -- RELEASE_PAYMENT card to demonstrate (a small post-delivery balance,
+  -- verified but not yet decided by the owner).
+  INSERT INTO payments (purchase_order_id, amount, currency, payment_type, beneficiary_bank_account_id, method, reference, status)
+  VALUES (v_po_id, 500, 'USD', 'BALANCE', v_bank_account_id, 'WIRE', 'TEST-WIRE-REF-0002', 'VERIFIED')
+  RETURNING id INTO v_payment_pending_id;
+
+  INSERT INTO payment_verifications (payment_id, check_type, passed, details) VALUES
+    (v_payment_pending_id, 'BANK_NAME_MATCH', true, 'Account holder matches supplier legal name.'),
+    (v_payment_pending_id, 'ACCOUNT_NOT_PERSONAL', true, 'Company account.'),
+    (v_payment_pending_id, 'AMOUNT_MATCHES_PO', true, 'Post-delivery balance, within PO scope.'),
+    (v_payment_pending_id, 'SUPPLIER_NOT_FROZEN', true, 'Supplier status is APPROVED.');
+
+  INSERT INTO approvals (gate, entity, entity_id, requested_by, snapshot, status)
+  VALUES ('RELEASE_PAYMENT', 'payment', v_payment_pending_id, v_owner_id, '{"amount": 500, "currency": "USD"}', 'PENDING');
 
   -- ---- Donor truck + parts -----------------------------------------------------
   INSERT INTO donor_trucks (opportunity_id, purchase_order_id, vin, brand, model, configuration, year, status)
