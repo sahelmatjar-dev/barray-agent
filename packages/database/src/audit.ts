@@ -28,3 +28,12 @@ export async function writeAuditLog(entry: AuditLogEntry): Promise<void> {
     ],
   );
 }
+
+export async function listAuditLogs(limit = 100) {
+  return query(
+    `SELECT a.*, u.full_name AS user_name FROM audit_logs a
+     LEFT JOIN users u ON u.id = a.user_id
+     ORDER BY a.created_at DESC LIMIT $1`,
+    [limit],
+  );
+}

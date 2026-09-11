@@ -1,5 +1,16 @@
 import { LandedCostBreakdown } from "@barray/shared";
-import { query } from "../pool";
+import { query, queryOne } from "../pool";
+
+export async function listLandedCosts() {
+  return query(
+    `SELECT lc.*, d.code AS donor_code FROM landed_costs lc
+     JOIN donor_trucks d ON d.id = lc.donor_id ORDER BY lc.calculated_at DESC`,
+  );
+}
+
+export async function getLandedCostForDonor(donorId: string) {
+  return queryOne(`SELECT * FROM landed_costs WHERE donor_id = $1`, [donorId]);
+}
 
 export async function upsertLandedCost(donorId: string, breakdown: LandedCostBreakdown): Promise<void> {
   await query(

@@ -50,3 +50,38 @@ export async function listAvailableInventory(): Promise<{ id: string; part_code:
     `SELECT i.id, p.part_code, p.part_type FROM inventory i JOIN parts p ON p.id = i.part_id WHERE i.part_status = 'AVAILABLE'`,
   );
 }
+
+export async function listInventory() {
+  return query(
+    `SELECT i.*, p.part_code, p.part_type, p.condition, d.code AS donor_code,
+            wl.code AS location_code, w.name AS warehouse_name
+     FROM inventory i
+     JOIN parts p ON p.id = i.part_id
+     JOIN donor_trucks d ON d.id = p.donor_truck_id
+     LEFT JOIN warehouse_locations wl ON wl.id = i.warehouse_location_id
+     LEFT JOIN warehouses w ON w.id = wl.warehouse_id
+     ORDER BY i.created_at DESC`,
+  );
+}
+
+export async function listInventoryMovements(inventoryId: string) {
+  return query(`SELECT * FROM inventory_movements WHERE inventory_id = $1 ORDER BY created_at`, [inventoryId]);
+}
+
+export async function listPartInstallationsForPart(partId: string) {
+  return query(
+    `SELECT pi.*, ft.registration_number FROM part_installations pi
+     JOIN fleet_trucks ft ON ft.id = pi.fleet_truck_id WHERE pi.part_id = $1 ORDER BY pi.installation_date DESC`,
+    [partId],
+  );
+}
+
+export async function listPartInstallations() {
+  return query(
+    `SELECT pi.*, p.part_code, ft.registration_number
+     FROM part_installations pi
+     JOIN parts p ON p.id = pi.part_id
+     JOIN fleet_trucks ft ON ft.id = pi.fleet_truck_id
+     ORDER BY pi.installation_date DESC`,
+  );
+}
