@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getSession } from "@/lib/auth";
 import { getDictionary } from "@/i18n/dictionaries";
 import { listInspections } from "@barray/database";
@@ -15,7 +16,12 @@ export default async function InspectionsPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-semibold">{dict.nav.inspections}</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-semibold">{dict.nav.inspections}</h1>
+        <Link href="/inspections/new" className="rounded-md bg-amber-500 px-3 py-1.5 text-sm font-medium text-slate-950 hover:bg-amber-400">
+          + New inspection
+        </Link>
+      </div>
       {inspections.length === 0 ? (
         <p className="text-sm text-slate-500">{dict.common.no_data}</p>
       ) : (
