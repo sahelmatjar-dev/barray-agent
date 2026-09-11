@@ -28,7 +28,19 @@ with the Dashboard.**
   main logic, and a shared error handler. See `n8n/docs/README.md`.
 - **Dashboard** (`apps/dashboard`) — Next.js, Arabic by default (also French
   and English), RTL-aware, role-based access (OWNER, PROCUREMENT_MANAGER,
-  FINANCE, MECHANIC, LOGISTICS, WAREHOUSE, VIEWER).
+  FINANCE, MECHANIC, LOGISTICS, WAREHOUSE, VIEWER). Every page in the sidebar
+  (Dashboard, Owner Command Center, Opportunities, Suppliers, Fleet, RFQs,
+  Quotes, Negotiations, Inspections, Purchases, Payments, Donor Trucks,
+  Dismantling, Packing, Logistics, Shipments, Customs, Receiving, Warehouse,
+  Inventory, Claims, Financial Analytics, Reports, AI Assistant, Audit Log,
+  Settings) renders real Postgres data, not a mock.
+- **In-app AI assistant** (`/assistant`) — answers questions in Arabic,
+  French or English by classifying intent deterministically and retrieving
+  the exact matching rows from Postgres; it never guesses an answer outside
+  its supported intents (see `packages/shared/src/assistant-intent.ts`).
+- **Donor part QR codes** — each part on a donor truck's page gets a
+  generated QR code that opens `/parts/[id]`, showing condition, inventory
+  status, and full VIN → part → fleet-truck installation traceability.
 
 ## Architecture
 
@@ -197,9 +209,12 @@ DATABASE_URL=postgresql://barray:change-me@localhost:5432/barray_sourcing npm te
 
 Covered: compatibility scoring, supplier scoring, fraud detection,
 landed-cost calculations, ROI, approval gates, bank-account-change blocking,
-opportunity state transitions, inventory movement, n8n workflow JSON
-structure, and the full `TEST-SITRAK-C7H-001` pipeline end to end
-(`DISCOVERED` → ... → `CLOSED`).
+opportunity state transitions, inventory movement, the AI assistant's intent
+classification and answer formatting, n8n workflow JSON structure (all 27
+files), the full `TEST-SITRAK-C7H-001` pipeline end to end (`DISCOVERED` →
+... → `CLOSED`), and a SQL regression suite for the assistant's aggregate
+queries (`tests/e2e/assistant-queries.test.ts` — guards against fan-out
+double-counting when joining a 1-row-per-donor table to a many-rows table).
 
 ## How to deploy
 
@@ -270,19 +285,29 @@ Target: a Linux VPS running Docker Compose.
       this development sandbox does not have; validated instead by running
       Postgres and the dashboard natively, see below)
 - [x] PostgreSQL initializes and all 13 migrations apply cleanly and idempotently
-- [x] Dashboard loads (`next build` succeeds for all 33 routes; verified live
-      with `next start` + curl smoke tests)
-- [x] Authentication works (login, session cookie, RBAC-gated actions)
-- [x] Seed data loads (`TEST-SITRAK-C7H-001` and related rows)
-- [x] Opportunity page works (list + detail with live compatibility scoring)
-- [x] Supplier page works (list + detail with trust score/bank accounts)
-- [x] Fleet page works (list + detail)
+- [x] Dashboard loads (`next build` succeeds for all 45 routes; verified live
+      with `next start` + curl smoke tests against every sidebar page)
+- [x] Authentication works (login, session cookie, RBAC-gated actions and
+      views — e.g. Payments hides amounts from non-OWNER/FINANCE roles)
+- [x] Seed data loads: `TEST-SITRAK-C7H-001` (fresh, DISCOVERED, used by the
+      E2E test) and a second fully-closed demo pipeline (`EBR-CN-001`,
+      SITRAK G7) exercising every downstream table — negotiation, inspection,
+      all four approval gates, PO, payment, dismantling, packing, freight,
+      shipment, a GIR 2(a)-flagged customs record, warehouse inventory with
+      an installed part, receiving, and a claim. Idempotent — re-running
+      `npm run db:seed` never duplicates rows (regression-tested)
+- [x] Every dashboard page works against real data (Opportunities, Suppliers,
+      Fleet, RFQs, Quotes, Negotiations, Inspections, Purchases, Payments,
+      Donor Trucks + generated part QR codes, Dismantling, Packing,
+      Logistics, Shipments, Customs, Receiving, Warehouse, Inventory,
+      Claims, Financial Analytics, Reports, AI Assistant, Audit Log, Settings)
 - [x] Approval gates work (DB triggers + role checks, unit + e2e tested)
-- [x] Scoring engines work (60 unit tests across all 8 engines)
+- [x] Scoring engines work (60+ unit tests across all 8 engines)
 - [x] n8n workflows import-valid (structural validation test, 189 assertions
       across 27 files — actual import into a running n8n instance requires a
       Docker daemon this sandbox doesn't have; do this once during your first
       `docker compose up`)
-- [x] Tests pass (259/259: unit + n8n structure + full E2E pipeline)
+- [x] Tests pass (273/273: unit + n8n structure + full E2E pipeline +
+      assistant query regression tests)
 - [x] Production build succeeds (`next build`, ESLint clean)
 - [x] README is complete
