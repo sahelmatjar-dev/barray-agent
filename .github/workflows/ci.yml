@@ -1,0 +1,162 @@
+name: CI
+
+# Runs on every PR targeting main and every push to main. No other trigger
+# (no schedule, no workflow_dispatch secrets exposure) is needed for this
+# pipeline's purpose.
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# Cancel a stale run when new commits land on the same PR/branch, so the
+# check on a PR always reflects its current head rather than a superseded one.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # ---------------------------------------------------------------------
+  # Test-only values. None of these are production secrets — they exist
+  # only to satisfy the app's own startup checks (see lib/session.ts,
+  # lib/internal-auth.ts) inside this ephemeral CI run. Real deployments
+  # generate their own via `openssl rand -hex 32` (see .env.example).
+  #
+  # ANTHROPIC_API_KEY / OPENAI_API_KEY / GOOGLE_CLIENT_ID /
+  # GOOGLE_CLIENT_SECRET / GOOGLE_REFRESH_TOKEN / TELEGRAM_BOT_TOKEN /
+  # ALIBABA_API_KEY / MADE_IN_CHINA_API_KEY are deliberately NOT set here.
+  # Code that needs them (packages/ai, packages/integrations) fails loudly
+  # with IntegrationNotConfiguredError instead of faking success — see
+  # docs/sourcing-providers.md and scripts/ci/check-env.js, which fails the
+  # build if any of them leak into this environment.
+  # ---------------------------------------------------------------------
+  NODE_ENV: test
+  DATABASE_URL: postgresql://barray_ci:barray_ci@localhost:5432/barray_ci
+  SESSION_SECRET: ci-only-session-secret-0123456789abcdef-not-for-production
+  INTERNAL_API_TOKEN: ci-only-internal-api-token-0123456789
+  APP_BASE_URL: http://localhost:3000
+  AI_PROVIDER: anthropic
+
+jobs:
+  ci:
+    name: Lint, typecheck, test, migrate, validate, build, audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: barray_ci
+          POSTGRES_PASSWORD: barray_ci
+          POSTGRES_DB: barray_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U barray_ci -d barray_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    steps:
+      # 1. Checkout repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Setup Node.js with dependency caching
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      # 3. Install dependencies
+      - name: Install dependencies (npm ci)
+        run: npm ci
+
+      # 4. Validate required test environment variables without using production secrets
+      - name: Validate CI environment variables
+        run: node scripts/ci/check-env.js
+
+      # 5. Run ESLint
+      - name: Run ESLint
+        run: npm run lint
+
+      # 6. Run TypeScript typecheck
+      - name: Run TypeScript typecheck
+        run: npm run typecheck
+
+      # 7. Run the complete automated test suite. DATABASE_URL is intentionally
+      # unset for this step: DB-dependent e2e tests self-skip (by design, see
+      # tests/e2e/test-sitrak-c7h-001.test.ts) until Postgres has been
+      # migrated and seeded, matching the required step ordering below.
+      - name: Run automated test suite
+        run: npm test
+        env:
+          DATABASE_URL: ""
+
+      # 8. Start/use ephemeral PostgreSQL. The service container above is
+      # already starting in the background; this step blocks until it is
+      # actually accepting connections before anything touches it.
+      - name: Wait for ephemeral PostgreSQL
+        run: |
+          for i in $(seq 1 30); do
+            if pg_isready -h localhost -p 5432 -U barray_ci -d barray_ci; then
+              echo "Postgres is ready."
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Postgres did not become ready in time." >&2
+          exit 1
+
+      # 9. Apply all database migrations from an empty database
+      - name: Apply database migrations
+        run: npm run db:migrate
+
+      # 10. Verify migration idempotency where supported (scripts/migrate.js
+      # tracks applied files in schema_migrations and skips them on re-run;
+      # a second run must apply zero new files and exit cleanly).
+      - name: Verify migration idempotency
+        run: |
+          npm run db:migrate
+          npm run db:migrate:status
+          if npm run db:migrate 2>&1 | tee /tmp/second-migrate.log | grep -q "Applying "; then
+            echo "Migrations are not idempotent: a second run applied files that should have been skipped." >&2
+            exit 1
+          fi
+
+      # 11. Load test/seed data and validate it
+      - name: Load and validate seed data
+        run: |
+          npm run db:seed
+          node scripts/ci/validate-seed.js
+
+      # 12. Run SQL regression tests (the real end-to-end suite against the
+      # now-migrated-and-seeded database; these tests are skipped in step 7
+      # precisely so they run for real here, against real Postgres state).
+      - name: Run SQL/database regression tests
+        run: npx vitest run tests/e2e
+
+      # 13. Validate all n8n workflow JSON files structurally
+      - name: Validate n8n workflow definitions
+        run: npx vitest run tests/unit/n8n-workflows.test.ts
+
+      # 14. Run `docker compose config` validation. Values below are
+      # syntactic placeholders only (docker-compose.yml requires these to be
+      # non-empty via `${VAR:?...}`) — no container is started, nothing is
+      # deployed, and none of these values are used anywhere else.
+      - name: Validate Docker Compose configuration
+        run: docker compose config
+        env:
+          SESSION_SECRET: ci-only-compose-validation-value-not-real
+          N8N_ENCRYPTION_KEY: ci-only-compose-validation-value-not-real
+          N8N_BASIC_AUTH_PASSWORD: ci-only-compose-validation-value-not-real
+
+      # 15. Run the production Next.js build
+      - name: Run production build
+        run: npm run build
+
+      # 16. Run npm audit at high severity and above
+      - name: Run npm audit (high+ severity)
+        run: npm audit --audit-level=high

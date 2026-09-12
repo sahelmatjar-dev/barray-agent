@@ -1,12 +1,33 @@
 {
-  "name": "barray-truck-agent",
-  "version": "3.0.0",
-  "description": "BARRAY Fleet Manager - Truck Diagnostic Agent",
-  "main": "server.js",
+  "name": "el-barray-ra-sitrak-sourcing-os",
+  "version": "0.1.0",
+  "private": true,
+  "description": "EL BARRAY RA — SITRAK China Sourcing OS (donor truck sourcing, dismantling, import, inventory).",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "start": "node server.js"
+    "db:migrate": "node scripts/migrate.js up",
+    "db:migrate:status": "node scripts/migrate.js status",
+    "db:seed": "SEED_INCLUDE_TEST_DATA=true node scripts/seed.js",
+    "db:seed:prod": "node scripts/seed.js",
+    "db:reset": "node scripts/reset.js",
+    "db:create-owner": "node scripts/create-owner.js",
+    "dev": "npm run dev --workspace=apps/dashboard",
+    "build": "npm run build --workspace=apps/dashboard",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "npm run lint --workspace=apps/dashboard",
+    "typecheck": "npm run typecheck --workspace=apps/dashboard && tsc --noEmit -p packages/shared/tsconfig.json && tsc --noEmit -p packages/database/tsconfig.json && tsc --noEmit -p packages/ai/tsconfig.json && tsc --noEmit -p packages/integrations/tsconfig.json"
+  },
+  "devDependencies": {
+    "bcryptjs": "^2.4.3",
+    "pg": "^8.13.1",
+    "typescript": "^5.7.2",
+    "vitest": "^5.0.0"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.12.0"
   }
 }

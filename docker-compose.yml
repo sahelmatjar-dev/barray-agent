@@ -1,0 +1,130 @@
+name: barray-sitrak-sourcing
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-barray}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-barray}
+      POSTGRES_DB: ${POSTGRES_DB:-barray_sourcing}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    # Not published to the host on purpose — only other containers on
+    # barray_net may reach Postgres. Use `docker compose exec postgres psql`
+    # for local access instead of publishing 5432.
+    expose:
+      - "5432"
+    networks: [barray_net]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-barray} -d ${POSTGRES_DB:-barray_sourcing}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  migrate:
+    build:
+      context: .
+      dockerfile: docker/migrate.Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-barray}:${POSTGRES_PASSWORD:-barray}@postgres:5432/${POSTGRES_DB:-barray_sourcing}
+    networks: [barray_net]
+    restart: "no"
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    # Used for n8n queue-mode execution locking and short-lived AI response
+    # caching (see packages/ai). Not required for a single-instance n8n
+    # deployment but kept on by default so queue mode can be enabled later
+    # without a compose change.
+    volumes:
+      - redis_data:/data
+    expose:
+      - "6379"
+    networks: [barray_net]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  n8n:
+    image: n8nio/n8n:latest
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      N8N_HOST: ${N8N_HOST:-localhost}
+      N8N_PROTOCOL: ${N8N_PROTOCOL:-http}
+      N8N_PORT: 5678
+      WEBHOOK_URL: ${N8N_WEBHOOK_URL:-http://localhost:5678/}
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:?N8N_ENCRYPTION_KEY is required}
+      # n8n editor must never be exposed publicly without auth (see README "Security").
+      N8N_BASIC_AUTH_ACTIVE: "true"
+      N8N_BASIC_AUTH_USER: ${N8N_BASIC_AUTH_USER:-admin}
+      N8N_BASIC_AUTH_PASSWORD: ${N8N_BASIC_AUTH_PASSWORD:?N8N_BASIC_AUTH_PASSWORD is required}
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: postgres
+      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_DATABASE: ${POSTGRES_DB:-barray_sourcing}
+      DB_POSTGRESDB_USER: ${POSTGRES_USER:-barray}
+      DB_POSTGRESDB_PASSWORD: ${POSTGRES_PASSWORD:-barray}
+      DB_POSTGRESDB_SCHEMA: n8n
+      GENERIC_TIMEZONE: ${TZ:-Africa/Casablanca}
+    volumes:
+      - n8n_data:/home/node/.n8n
+    ports:
+      - "127.0.0.1:5678:5678" # bind to localhost only; put a reverse proxy + auth in front for remote access
+    networks: [barray_net]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:5678/healthz || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: docker/dashboard.Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-barray}:${POSTGRES_PASSWORD:-barray}@postgres:5432/${POSTGRES_DB:-barray_sourcing}
+      SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET is required}
+      AI_PROVIDER: ${AI_PROVIDER:-anthropic}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_REFRESH_TOKEN: ${GOOGLE_REFRESH_TOKEN:-}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:3000}
+      REDIS_URL: redis://redis:6379
+    ports:
+      - "127.0.0.1:3000:3000" # bind to localhost only; put a reverse proxy with HTTPS in front for remote access
+    networks: [barray_net]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/login || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+networks:
+  barray_net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  n8n_data:
+  redis_data:

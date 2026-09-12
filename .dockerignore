@@ -1,0 +1,24 @@
+# Critical: .env must never enter a Docker build context — the dashboard
+# Dockerfile does `COPY . .` in its build stage, and anything not excluded
+# here gets baked into an image layer (recoverable even if removed later).
+.env
+.env.*
+!.env.example
+
+node_modules
+**/node_modules
+.next
+**/.next
+dist
+**/dist
+coverage
+
+.git
+.gitignore
+
+*.log
+npm-debug.log*
+
+.DS_Store
+
+legacy

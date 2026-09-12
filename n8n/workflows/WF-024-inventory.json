@@ -1,0 +1,266 @@
+{
+  "name": "WF-024 Inventory Intake",
+  "nodes": [
+    {
+      "id": "trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        300
+      ],
+      "parameters": {
+        "path": "inventory-receive",
+        "httpMethod": "POST",
+        "responseMode": "onReceived"
+      },
+      "notes": "Called once a receiving item is matched (status = MATCHED)."
+    },
+    {
+      "id": "check_idempotency",
+      "name": "Check Idempotency",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        280,
+        300
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id FROM workflow_runs WHERE workflow_code = 'WF-024' AND idempotency_key = $1 AND status = 'SUCCESS'",
+        "queryReplacement": "={{ [$json.receivingItemId] }}"
+      },
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_POSTGRES_CRED",
+          "name": "Barray Postgres"
+        }
+      },
+      "notes": "Idempotency: skips if this workflow already succeeded for this key (see workflow_runs unique index)."
+    },
+    {
+      "id": "if_already_run",
+      "name": "IF Already Run",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        560,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "stop_already_run",
+      "name": "Stop (Already Processed)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        840,
+        180
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "start_run",
+      "name": "Start Workflow Run",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        840,
+        420
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO workflow_runs (workflow_code, idempotency_key, entity, status) VALUES ('WF-024', $1, 'inventory', 'RUNNING') RETURNING id",
+        "queryReplacement": "={{ [$json.receivingItemId] }}"
+      },
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_POSTGRES_CRED",
+          "name": "Barray Postgres"
+        }
+      }
+    },
+    {
+      "id": "main_logic",
+      "name": "Apply Inventory Movement",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1120,
+        420
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.APP_BASE_URL }}/api/internal/inventory/apply-movement",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\"receivingItemId\": $json.receivingItemId, \"movementType\": \"RECEIVED\"} }}",
+        "options": {}
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "PLACEHOLDER_DASHBOARD_API_CRED",
+          "name": "Barray Dashboard API"
+        }
+      },
+      "continueOnFail": true,
+      "notes": "Calls the internal dashboard API endpoint /api/internal/inventory/apply-movement, which applies deterministic @barray/shared logic and writes Postgres. n8n does not compute business rules itself."
+    },
+    {
+      "id": "persist_result",
+      "name": "Persist Result",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1400,
+        420
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO audit_logs (action, entity, entity_id, new_value, workflow_id) VALUES ('INVENTORY_MOVEMENT_APPLIED', 'inventory', $1, $2, 'WF-024')",
+        "queryReplacement": "={{ [$json.entityId ?? $json.id ?? null, JSON.stringify($json)] }}"
+      },
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_POSTGRES_CRED",
+          "name": "Barray Postgres"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "finish_run",
+      "name": "Record Success",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1680,
+        420
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE workflow_runs SET status = 'SUCCESS', finished_at = now() WHERE workflow_code = 'WF-024' AND idempotency_key = $1",
+        "queryReplacement": "={{ [$json.receivingItemId] }}"
+      },
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_POSTGRES_CRED",
+          "name": "Barray Postgres"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Check Idempotency",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Idempotency": {
+      "main": [
+        [
+          {
+            "node": "IF Already Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Already Run": {
+      "main": [
+        [
+          {
+            "node": "Stop (Already Processed)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Start Workflow Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start Workflow Run": {
+      "main": [
+        [
+          {
+            "node": "Apply Inventory Movement",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apply Inventory Movement": {
+      "main": [
+        [
+          {
+            "node": "Persist Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Persist Result": {
+      "main": [
+        [
+          {
+            "node": "Record Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "WF-027-error-handler",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true
+  },
+  "meta": {
+    "barrayWorkflowCode": "WF-024",
+    "description": "Applies the deterministic inventory movement state machine (packages/shared inventory) to move received parts into AVAILABLE stock at their warehouse location.",
+    "requiredCredentials": [
+      "Barray Dashboard API (HTTP Header Auth)",
+      "Barray Postgres"
+    ]
+  }
+}
