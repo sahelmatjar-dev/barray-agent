@@ -10,8 +10,10 @@
   "scripts": {
     "db:migrate": "node scripts/migrate.js up",
     "db:migrate:status": "node scripts/migrate.js status",
-    "db:seed": "node scripts/seed.js",
+    "db:seed": "SEED_INCLUDE_TEST_DATA=true node scripts/seed.js",
+    "db:seed:prod": "node scripts/seed.js",
     "db:reset": "node scripts/reset.js",
+    "db:create-owner": "node scripts/create-owner.js",
     "dev": "npm run dev --workspace=apps/dashboard",
     "build": "npm run build --workspace=apps/dashboard",
     "test": "vitest run",
@@ -19,9 +21,10 @@
     "lint": "npm run lint --workspace=apps/dashboard"
   },
   "devDependencies": {
+    "bcryptjs": "^2.4.3",
     "pg": "^8.13.1",
     "typescript": "^5.7.2",
-    "vitest": "^2.1.8"
+    "vitest": "^5.0.0"
   },
   "engines": {
     "node": ">=20.0.0"

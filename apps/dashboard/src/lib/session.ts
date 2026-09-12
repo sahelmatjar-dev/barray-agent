@@ -1,7 +1,22 @@
 import { SignJWT, jwtVerify } from "jose";
 import { UserRole } from "@barray/shared";
 
-const encodedSecret = () => new TextEncoder().encode(process.env.SESSION_SECRET || "dev-only-insecure-secret-change-me");
+/**
+ * No fallback secret. A hardcoded default here would mean anyone who reads
+ * this (public) source could forge a valid session JWT for ANY user,
+ * including OWNER, on any deployment that forgot to set SESSION_SECRET.
+ * Fail loudly at first use instead — see .env.example.
+ */
+function encodedSecret(): Uint8Array {
+  const secret = process.env.SESSION_SECRET;
+  if (!secret || secret.length < 32) {
+    throw new Error(
+      "SESSION_SECRET is not set (or is shorter than 32 characters). Generate one with `openssl rand -hex 32` " +
+        "and set it in your environment — see .env.example. Refusing to sign or verify sessions without it.",
+    );
+  }
+  return new TextEncoder().encode(secret);
+}
 
 export interface SessionPayload {
   sub: string; // user id

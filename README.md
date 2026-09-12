@@ -84,13 +84,17 @@ cp .env.example .env   # fill in DATABASE_URL, SESSION_SECRET at minimum
 export $(grep -v '^#' .env | xargs)   # or use a tool like direnv
 
 npm run db:migrate      # applies database/migrations/*.sql
-npm run db:seed         # roles + owner user + TEST sample data
+npm run db:seed         # roles + settings + a DEV owner login + TEST sample data
 
 npm run dev             # apps/dashboard on http://localhost:3000
 ```
 
-Sign in with `owner@elbarrayra.test` / `ChangeMe123!` (from the seed data —
-**rotate this immediately**, see "How to create the first user" below).
+`npm run db:seed` is a **development convenience only** — it sets
+`SEED_INCLUDE_TEST_DATA=true`, which additionally creates a login
+`owner@elbarrayra.test` / `ChangeMe123!`. That password hash is public (it's
+in this repository), so this account must never exist outside local
+dev/CI — see "How to create the first user" below for the production path,
+which never uses a hardcoded password.
 
 ## Docker setup
 
@@ -103,10 +107,17 @@ docker compose up -d --build
 ```
 
 This starts: `postgres` (not published to the host — only reachable from
-other containers), `redis`, `migrate` (runs migrations + seed once, then
-exits), `n8n` (bound to `127.0.0.1:5678`, basic-auth protected), and
-`dashboard` (bound to `127.0.0.1:3000`). Put a reverse proxy with HTTPS in
-front for anything beyond local access (see "Deployment").
+other containers), `redis`, `migrate` (runs migrations once, then exits),
+`n8n` (bound to `127.0.0.1:5678`, basic-auth protected), and `dashboard`
+(bound to `127.0.0.1:3000`). Put a reverse proxy with HTTPS in front for
+anything beyond local access (see "Deployment").
+
+The `migrate` service runs `scripts/seed.js` **without**
+`SEED_INCLUDE_TEST_DATA` — it only ever applies production-safe seeds
+(roles and configurable engine weights). It never creates the dev owner
+login or sample data, so a fresh `docker compose up` deployment starts with
+zero user accounts. Create the real first user with
+`npm run db:create-owner` (below) before you can sign in.
 
 ## Database initialization
 
@@ -116,7 +127,8 @@ Migrations are plain numbered SQL files applied by `scripts/migrate.js`
 ```bash
 npm run db:migrate          # apply pending migrations
 npm run db:migrate:status   # show applied vs. pending
-npm run db:seed             # roles, owner user, TEST sample data
+npm run db:seed             # DEV ONLY: roles + settings + dev owner login + TEST sample data
+npm run db:seed:prod        # production-safe: roles + settings only, no accounts
 npm run db:reset            # DROP SCHEMA public CASCADE + re-migrate (dev only!)
 ```
 
@@ -170,8 +182,28 @@ directly.
 
 ## How to create the first user
 
-The seed creates `owner@elbarrayra.test` with role `OWNER` and password
-`ChangeMe123!` (bcrypt hash in `database/seeds/001_roles_and_owner.sql`).
+Production deployments start with zero user accounts (see "Docker setup"
+above — the `migrate` service never seeds a login). Create the real OWNER
+account with `scripts/create-owner.js`, which requires a real email and a
+strong password (≥ 12 characters) and refuses to run twice for the same
+email:
+
+```bash
+# Local / bare-metal:
+OWNER_EMAIL=you@company.com OWNER_PASSWORD='a-strong-unique-password' \
+  npm run db:create-owner
+
+# Docker Compose:
+docker compose run --rm \
+  -e OWNER_EMAIL=you@company.com -e OWNER_PASSWORD='a-strong-unique-password' \
+  dashboard node scripts/create-owner.js
+```
+
+For local development only, `npm run db:seed` also creates
+`owner@elbarrayra.test` / `ChangeMe123!` — that password hash is published
+in this repository, so this account must never be reachable from anything
+but a local/CI database (see `database/seeds/002_dev_owner_account.sql`).
+
 After first login, change the password by updating `users.password_hash`
 with a freshly bcrypt-hashed value (a dedicated "change password" UI is on
 the roadmap — see Settings page). To add more users, insert into `users`

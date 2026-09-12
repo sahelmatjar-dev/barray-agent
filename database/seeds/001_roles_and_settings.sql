@@ -1,5 +1,6 @@
--- 001_roles_and_owner.sql
--- Safe to run multiple times (ON CONFLICT DO NOTHING / DO UPDATE).
+-- 001_roles_and_settings.sql
+-- Safe to run in any environment, including production: no user accounts,
+-- no credentials, no sample data. Safe to run multiple times.
 
 INSERT INTO roles (code, name_ar, name_fr, name_en, permissions) VALUES
   ('OWNER', 'المالك', 'Propriétaire', 'Owner', '["*"]'),
@@ -15,17 +16,6 @@ INSERT INTO roles (code, name_ar, name_fr, name_en, permissions) VALUES
     '["inventory:*","receiving:*","warehouses:*"]'),
   ('VIEWER', 'مشاهد', 'Lecteur', 'Viewer', '["*:read"]')
 ON CONFLICT (code) DO NOTHING;
-
--- Default owner account for first login. Password is bcrypt hash of "ChangeMe123!"
--- Rotate it immediately after first login (see README "How to create the first user").
-INSERT INTO users (email, full_name, password_hash, locale, status)
-VALUES ('owner@elbarrayra.test', 'EL BARRAY RA Owner', '$2a$10$mowNIM/kwR3BGqfv9ykLzOlKPqnKOk239a/lHzsFcbPxSaNQelhxa', 'ar', 'ACTIVE')
-ON CONFLICT (email) DO NOTHING;
-
-INSERT INTO user_roles (user_id, role_id)
-SELECT u.id, r.id FROM users u, roles r
-WHERE u.email = 'owner@elbarrayra.test' AND r.code = 'OWNER'
-ON CONFLICT DO NOTHING;
 
 INSERT INTO system_settings (key, value, description) VALUES
   ('compatibility_weights',
