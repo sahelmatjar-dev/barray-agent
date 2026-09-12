@@ -1,5 +1,7 @@
 # EL BARRAY RA — SITRAK China Sourcing OS
 
+[![CI](https://github.com/sahelmatjar-dev/barray-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/sahelmatjar-dev/barray-agent/actions/workflows/ci.yml)
+
 An operations system for sourcing used SINOTRUK SITRAK trucks (C7H, G7, C9H)
 in China as donor trucks for spare parts: discovery → supplier verification →
 compatibility check → RFQ → quote analysis → negotiation → inspection →

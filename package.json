@@ -18,7 +18,8 @@
     "build": "npm run build --workspace=apps/dashboard",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "npm run lint --workspace=apps/dashboard"
+    "lint": "npm run lint --workspace=apps/dashboard",
+    "typecheck": "npm run typecheck --workspace=apps/dashboard && tsc --noEmit -p packages/shared/tsconfig.json && tsc --noEmit -p packages/database/tsconfig.json && tsc --noEmit -p packages/ai/tsconfig.json && tsc --noEmit -p packages/integrations/tsconfig.json"
   },
   "devDependencies": {
     "bcryptjs": "^2.4.3",
