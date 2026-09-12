@@ -3,7 +3,7 @@
 # Runs scripts/seed.js WITHOUT SEED_INCLUDE_TEST_DATA — this only ever
 # applies production-safe seeds (roles/settings), never the dev-only owner
 # account or sample data (see scripts/seed.js).
-FROM node:20-alpine
+FROM node:22-alpine
 WORKDIR /repo
 RUN addgroup -g 1001 -S migrate && adduser -S migrate -u 1001
 COPY package.json package-lock.json ./

@@ -1,6 +1,6 @@
 # Multi-stage build for apps/dashboard (Next.js, standalone output).
 # Build context must be the repository root (see docker-compose.yml).
-FROM node:20-alpine AS base
+FROM node:22-alpine AS base
 WORKDIR /repo
 
 FROM base AS deps
@@ -19,7 +19,7 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build --workspace=apps/dashboard
 
-FROM node:20-alpine AS runner
+FROM node:22-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1

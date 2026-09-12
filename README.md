@@ -72,7 +72,7 @@ regardless of whether it was triggered by a cron job or a click.
 
 ## Prerequisites
 
-- Node.js ≥ 20, npm ≥ 10
+- Node.js ≥ 22.12, npm ≥ 10
 - Docker + Docker Compose v2 (for the full stack) — or a local Postgres 16
   for dashboard-only development
 - A Google Cloud project (Gmail + Drive OAuth), a Telegram bot token, and an
