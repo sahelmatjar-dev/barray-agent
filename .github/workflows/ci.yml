@@ -153,10 +153,24 @@ jobs:
           N8N_ENCRYPTION_KEY: ci-only-compose-validation-value-not-real
           N8N_BASIC_AUTH_PASSWORD: ci-only-compose-validation-value-not-real
 
-      # 15. Run the production Next.js build
+      # 15. Actually build the Docker images docker-compose.yml deploys
+      # (dashboard, migrate) — not just validate the compose YAML's syntax.
+      # `docker compose config` above only parses the file; it never invokes
+      # a single Dockerfile instruction, so a broken COPY/RUN inside a
+      # Dockerfile (e.g. copying a path that npm workspaces never creates)
+      # can pass every other check here and still fail on first real deploy.
+      # This step is the regression test for exactly that class of bug.
+      - name: Build Docker images (dashboard, migrate)
+        run: docker compose build dashboard migrate
+        env:
+          SESSION_SECRET: ci-only-compose-validation-value-not-real
+          N8N_ENCRYPTION_KEY: ci-only-compose-validation-value-not-real
+          N8N_BASIC_AUTH_PASSWORD: ci-only-compose-validation-value-not-real
+
+      # 16. Run the production Next.js build
       - name: Run production build
         run: npm run build
 
-      # 16. Run npm audit at high severity and above
+      # 17. Run npm audit at high severity and above
       - name: Run npm audit (high+ severity)
         run: npm audit --audit-level=high

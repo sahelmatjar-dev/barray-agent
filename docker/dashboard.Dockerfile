@@ -13,8 +13,14 @@ COPY packages/integrations/package.json packages/integrations/package.json
 RUN npm install
 
 FROM base AS build
+# Only the root node_modules is copied: this is a small npm workspaces repo
+# with no version conflicts forcing npm to nest a package under
+# apps/dashboard/node_modules, so that directory never exists after
+# `npm install` at the repo root (verified: 0 packages in package-lock.json
+# resolve under apps/dashboard/node_modules/). Node's module resolution
+# walks up parent directories, so the hoisted root node_modules is found
+# from apps/dashboard just as it is from the repo root.
 COPY --from=deps /repo/node_modules ./node_modules
-COPY --from=deps /repo/apps/dashboard/node_modules ./apps/dashboard/node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build --workspace=apps/dashboard
