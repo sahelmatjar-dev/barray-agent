@@ -186,20 +186,25 @@ directly.
 
 Production deployments start with zero user accounts (see "Docker setup"
 above — the `migrate` service never seeds a login). Create the real OWNER
-account with `scripts/create-owner.js`, which requires a real email and a
-strong password (≥ 12 characters) and refuses to run twice for the same
-email:
+account interactively with `scripts/create-owner.js`, which prompts for a
+name, email, and password (≥ 12 characters, entered twice, masked as you
+type) and refuses to run twice for the same email. The password is never
+passed as a command-line argument or environment variable — it only ever
+lives in your terminal session — so it can't leak into shell history,
+`docker-compose.yml`, `.env`, or git:
 
 ```bash
 # Local / bare-metal:
-OWNER_EMAIL=you@company.com OWNER_PASSWORD='a-strong-unique-password' \
-  npm run db:create-owner
+DATABASE_URL=postgresql://... npm run db:create-owner
 
-# Docker Compose:
-docker compose run --rm \
-  -e OWNER_EMAIL=you@company.com -e OWNER_PASSWORD='a-strong-unique-password' \
-  dashboard node scripts/create-owner.js
+# Docker Compose — a dedicated one-shot service, kept out of `docker
+# compose up` by its "tools" profile so it only ever runs when you ask for
+# it by name:
+docker compose run --rm create-owner
 ```
+
+If an OWNER account already exists, the script lists it and asks for
+explicit `y/N` confirmation before creating another one.
 
 For local development only, `npm run db:seed` also creates
 `owner@elbarrayra.test` / `ChangeMe123!` — that password hash is published

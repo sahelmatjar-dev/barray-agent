@@ -154,14 +154,18 @@ jobs:
           N8N_BASIC_AUTH_PASSWORD: ci-only-compose-validation-value-not-real
 
       # 15. Actually build the Docker images docker-compose.yml deploys
-      # (dashboard, migrate) — not just validate the compose YAML's syntax.
-      # `docker compose config` above only parses the file; it never invokes
-      # a single Dockerfile instruction, so a broken COPY/RUN inside a
-      # Dockerfile (e.g. copying a path that npm workspaces never creates)
-      # can pass every other check here and still fail on first real deploy.
-      # This step is the regression test for exactly that class of bug.
-      - name: Build Docker images (dashboard, migrate)
-        run: docker compose build dashboard migrate
+      # (dashboard, migrate, create-owner) — not just validate the compose
+      # YAML's syntax. `docker compose config` above only parses the file;
+      # it never invokes a single Dockerfile instruction, so a broken
+      # COPY/RUN inside a Dockerfile (e.g. copying a path that npm
+      # workspaces never creates) can pass every other check here and
+      # still fail on first real deploy. This step is the regression test
+      # for exactly that class of bug. create-owner has "profiles: [tools]"
+      # so it's excluded from a bare `docker compose build`/`up` — building
+      # it by name here still works (Compose only skips it in the
+      # profile-less default set), and is what actually built it below.
+      - name: Build Docker images (dashboard, migrate, create-owner)
+        run: docker compose build dashboard migrate create-owner
         env:
           SESSION_SECRET: ci-only-compose-validation-value-not-real
           N8N_ENCRYPTION_KEY: ci-only-compose-validation-value-not-real
@@ -187,16 +191,60 @@ jobs:
             echo "migrate container exited 0 but the production-safe seed (roles) never ran." >&2
             exit 1
           fi
+          # Left running (not torn down) for the next step, which reuses this
+          # same migrated database to test the create-owner container.
+        env:
+          SESSION_SECRET: ci-only-compose-validation-value-not-real
+          N8N_ENCRYPTION_KEY: ci-only-compose-validation-value-not-real
+          N8N_BASIC_AUTH_PASSWORD: ci-only-compose-validation-value-not-real
+
+      # 17. Actually run the create-owner container end-to-end: drive its
+      # interactive stdin prompts via a pipe (name/email/password — the
+      # same non-interactive code path scripts/create-owner.js itself must
+      # support, since "docker compose run -T" allocates no TTY, exactly
+      # like this CI runner), then prove the created account can really
+      # authenticate by bcrypt-comparing the test password against the
+      # stored hash — not just that a row was inserted with *some* hash.
+      - name: Create test OWNER via create-owner container and verify authentication
+        run: |
+          printf 'CI Test Owner\nci-owner@example.test\nCiTestPassword123!\nCiTestPassword123!\n' | \
+            docker compose run --rm -T create-owner
+
+          HASH=$(docker compose exec -T postgres psql -U barray -d barray_sourcing -tAc \
+            "SELECT password_hash FROM users WHERE email = 'ci-owner@example.test'")
+          if [ -z "$HASH" ]; then
+            echo "create-owner container exited 0 but no user row was created." >&2
+            exit 1
+          fi
+
+          ROLE=$(docker compose exec -T postgres psql -U barray -d barray_sourcing -tAc \
+            "SELECT r.code FROM roles r JOIN user_roles ur ON ur.role_id = r.id JOIN users u ON u.id = ur.user_id WHERE u.email = 'ci-owner@example.test'")
+          if [ "$ROLE" != "OWNER" ]; then
+            echo "Created user does not have the OWNER role (got: '$ROLE')." >&2
+            exit 1
+          fi
+
+          node -e "
+            const bcrypt = require('bcryptjs');
+            bcrypt.compare('CiTestPassword123!', process.argv[1]).then((ok) => {
+              if (!ok) {
+                console.error('Password does not match the stored hash — the account cannot authenticate.');
+                process.exit(1);
+              }
+              console.log('Authentication check passed: the stored hash matches the test password.');
+            });
+          " "$HASH"
+
           docker compose down -v
         env:
           SESSION_SECRET: ci-only-compose-validation-value-not-real
           N8N_ENCRYPTION_KEY: ci-only-compose-validation-value-not-real
           N8N_BASIC_AUTH_PASSWORD: ci-only-compose-validation-value-not-real
 
-      # 17. Run the production Next.js build
+      # 18. Run the production Next.js build
       - name: Run production build
         run: npm run build
 
-      # 18. Run npm audit at high severity and above
+      # 19. Run npm audit at high severity and above
       - name: Run npm audit (high+ severity)
         run: npm audit --audit-level=high
