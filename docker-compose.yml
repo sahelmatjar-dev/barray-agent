@@ -34,6 +34,28 @@ services:
     networks: [barray_net]
     restart: "no"
 
+  # One-shot, interactive first-OWNER-account creation. `profiles: ["tools"]`
+  # keeps this out of `docker compose up` entirely — it only runs when
+  # explicitly requested:
+  #   docker compose run --rm create-owner
+  # Prompts for name/email/password over stdin (password entry is masked);
+  # the password is never passed as an env var, CLI argument, or written to
+  # this file, so it never reaches shell history, `.env`, or git. See
+  # scripts/create-owner.js and README "How to create the first user".
+  create-owner:
+    build:
+      context: .
+      dockerfile: docker/create-owner.Dockerfile
+    profiles: ["tools"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-barray}:${POSTGRES_PASSWORD:-barray}@postgres:5432/${POSTGRES_DB:-barray_sourcing}
+    networks: [barray_net]
+    stdin_open: true
+    tty: true
+
   redis:
     image: redis:7-alpine
     restart: unless-stopped
