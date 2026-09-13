@@ -1,6 +1,16 @@
 # Multi-stage build for apps/dashboard (Next.js, standalone output).
 # Build context must be the repository root (see docker-compose.yml).
-FROM node:22-alpine AS base
+#
+# base/deps/build run on a glibc (Debian) image, not Alpine: package-lock.json
+# was generated on a glibc host and only records the @next/swc-linux-x64-gnu
+# native binding (no musl variant), and Next.js 16's Turbopack build requires
+# a native swc binding — it cannot fall back to WASM. Building this stage on
+# Alpine (musl) fails with "Turbopack is not supported on this platform...
+# Only WebAssembly (WASM) bindings were loaded". The final `runner` stage
+# below stays on node:22-alpine: it only runs the already-compiled standalone
+# output (plain JS, no native runtime deps anywhere in this repo), so the
+# smaller Alpine image is safe there.
+FROM node:22-bookworm-slim AS base
 WORKDIR /repo
 
 FROM base AS deps
