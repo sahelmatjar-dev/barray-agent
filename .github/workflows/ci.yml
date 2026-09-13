@@ -167,10 +167,36 @@ jobs:
           N8N_ENCRYPTION_KEY: ci-only-compose-validation-value-not-real
           N8N_BASIC_AUTH_PASSWORD: ci-only-compose-validation-value-not-real
 
-      # 16. Run the production Next.js build
+      # 16. Actually run the built migrate image as a container against a
+      # real, ephemeral PostgreSQL — via `docker compose run`, the exact
+      # sequence a real `docker compose up` executes, not a bespoke `docker
+      # run`. A successful image *build* proves nothing about whether the
+      # container works: this is the regression test for a runtime failure
+      # like a missing npm dependency (e.g. `pg`) that only surfaces once
+      # the container actually executes scripts/migrate.js.
+      - name: Run migrate container against ephemeral PostgreSQL
+        run: |
+          docker compose run --rm migrate
+          MIGRATIONS_APPLIED=$(docker compose exec -T postgres psql -U barray -d barray_sourcing -tAc "SELECT count(*) FROM schema_migrations")
+          if [ "$MIGRATIONS_APPLIED" -lt 1 ]; then
+            echo "migrate container exited 0 but applied no migrations." >&2
+            exit 1
+          fi
+          ROLES_SEEDED=$(docker compose exec -T postgres psql -U barray -d barray_sourcing -tAc "SELECT count(*) FROM roles")
+          if [ "$ROLES_SEEDED" -lt 1 ]; then
+            echo "migrate container exited 0 but the production-safe seed (roles) never ran." >&2
+            exit 1
+          fi
+          docker compose down -v
+        env:
+          SESSION_SECRET: ci-only-compose-validation-value-not-real
+          N8N_ENCRYPTION_KEY: ci-only-compose-validation-value-not-real
+          N8N_BASIC_AUTH_PASSWORD: ci-only-compose-validation-value-not-real
+
+      # 17. Run the production Next.js build
       - name: Run production build
         run: npm run build
 
-      # 17. Run npm audit at high severity and above
+      # 18. Run npm audit at high severity and above
       - name: Run npm audit (high+ severity)
         run: npm audit --audit-level=high

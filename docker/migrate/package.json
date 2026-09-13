@@ -1,0 +1,9 @@
+{
+  "name": "barray-migrate-runtime",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Standalone runtime manifest for the `migrate` Docker image — only what scripts/migrate.js and scripts/seed.js actually require (pg + Node built-ins). Deliberately not part of the root npm workspace: keeps this image's install small and its dependency resolution independent of the dashboard/tooling dependency tree.",
+  "dependencies": {
+    "pg": "^8.13.1"
+  }
+}
